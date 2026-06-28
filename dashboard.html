@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Choudhary Transport - Enterprise Administration Portal Dashboard">
+  <title>Admin Dashboard | Choudhary Transport</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+  <div class="dash-layout">
+    
+    <!-- Sidebar navigation -->
+    <aside class="dash-sidebar" id="dash-sidebar">
+      <div class="sidebar-brand">
+        <a href="index.html" class="logo">
+          <span class="logo-icon"><i class="fa-solid fa-truck-fast"></i></span>
+          <span class="logo-text">CHOUDHARY<span class="accent-text">PORTAL</span></span>
+        </a>
+      </div>
+      
+      <div class="user-profile-sub">
+        <div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
+        <div class="user-info">
+          <h4 id="user-full-name">Loading Profile...</h4>
+          <span id="user-role-badge">Administrator</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <a href="#" class="menu-item active" id="menu-challan" onclick="switchDashTab('challan')">
+          <i class="fa-solid fa-file-invoice"></i> Challan Module
+        </a>
+        <a href="#" class="menu-item" id="menu-vehicle" onclick="switchDashTab('vehicle')">
+          <i class="fa-solid fa-truck"></i> Vehicle Profiles
+        </a>
+        <a href="#" class="menu-item" id="menu-driver-profile" onclick="switchDashTab('driver-profile')">
+          <i class="fa-solid fa-id-card-clip"></i> Driver Profiles
+        </a>
+        <a href="#" class="menu-item" id="menu-driver" onclick="switchDashTab('driver')">
+          <i class="fa-solid fa-id-card"></i> Driver Section
+        </a>
+        <a href="#" class="menu-item" id="menu-mechanic" onclick="switchDashTab('mechanic')">
+          <i class="fa-solid fa-screwdriver-wrench"></i> Mechanic Logs
+        </a>
+        <a href="#" class="menu-item" id="menu-diesel" onclick="switchDashTab('diesel')">
+          <i class="fa-solid fa-gas-pump"></i> Diesel Tracker
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary btn-block btn-sm" onclick="handleLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Log Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <div class="dash-content-area">
+      
+      <!-- Top header bar -->
+      <header class="dash-header">
+        <div class="header-left">
+          <button class="sidebar-toggle-btn" id="sidebar-toggle" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars-staggered"></i>
+          </button>
+          <h2 class="workspace-title" id="workspace-title-display">Challan System</h2>
+        </div>
+        <div class="header-right">
+          <span class="live-clock"><i class="fa-solid fa-clock"></i> <span id="clock-txt">12:00:00 PM</span></span>
+        </div>
+      </header>
+
+      <!-- Main Workspace Scrollable Container -->
+      <main class="dash-main-scroll">
+        
+        <!-- ================= CHALLAN TAB ================= -->
+        <div class="dash-tab-pane active" id="pane-challan">
+          
+          <!-- Summary Cards Section -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Total Challans</span>
+                  <h3 id="stat-total-challans">0</h3>
+                </div>
+                <div class="card-icon blue-bg"><i class="fa-solid fa-file-lines"></i></div>
+              </div>
+              <div class="card-footer-desc">Cumulative Records</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Rice Bags</span>
+                  <h3 id="stat-rice-bags">0</h3>
+                </div>
+                <div class="card-icon orange-bg"><i class="fa-solid fa-bowl-rice"></i></div>
+              </div>
+              <div class="card-footer-desc">This Month</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Wheat Bags</span>
+                  <h3 id="stat-wheat-bags">0</h3>
+                </div>
+                <div class="card-icon blue-bg"><i class="fa-solid fa-wheat-awn"></i></div>
+              </div>
+              <div class="card-footer-desc">This Month</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Total Bags</span>
+                  <h3 id="stat-total-bags">0</h3>
+                </div>
+                <div class="card-icon green-bg"><i class="fa-solid fa-boxes-stacked"></i></div>
+              </div>
+              <div class="card-footer-desc">This Month</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Total Amount</span>
+                  <h3 id="stat-total-amount">₹ 0</h3>
+                </div>
+                <div class="card-icon green-bg"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+              </div>
+              <div class="card-footer-desc">This Month (₹10/Bag)</div>
+            </div>
+          </div>
+
+          <!-- Master Workspace Grid -->
+          <div class="workspace-grid">
+            
+            <!-- Left Column: Records Table -->
+            <div class="workspace-table-panel">
+              <div class="panel-header">
+                <h3>Live Challan Database</h3>
+                
+                <!-- Search & Filters -->
+                <div class="filter-row">
+                  <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="challan-search" placeholder="Search Dealer / Challan No..." oninput="filterChallanTable()">
+                  </div>
+                  <div class="month-filter">
+                    <select id="challan-month-filter" onchange="filterChallanTable()">
+                      <option value="all">All Months</option>
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loader -->
+              <div id="challan-table-loader" class="table-spinner">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Retrieving Records...
+              </div>
+
+              <!-- Main Table -->
+              <div class="table-responsive">
+                <table class="dash-table" id="challans-data-table">
+                  <thead>
+                    <tr>
+                      <th>Challan No.</th>
+                      <th>Dealer Name</th>
+                      <th>Vehicle Number</th>
+                      <th>Driver Name</th>
+                      <th>Date</th>
+                      <th class="text-right">Rice Bags</th>
+                      <th class="text-right">Wheat Bags</th>
+                      <th class="text-right">Total Bags</th>
+                      <th class="text-right">Rate</th>
+                      <th class="text-right">Amount</th>
+                      <th class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="challan-table-rows">
+                    <!-- Loaded dynamically via js -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Empty State -->
+              <div class="table-empty-state hidden" id="challan-table-empty">
+                <i class="fa-solid fa-receipt"></i>
+                <p>No challan records found matching your filters.</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Add/Edit Form Card -->
+            <div class="workspace-form-panel">
+              <div class="form-card">
+                <h3 id="form-panel-title"><i class="fa-solid fa-folder-plus"></i> Add New Challan Entry</h3>
+                <p class="form-panel-subtitle">Create a cargo consignment log. Amount is calculated automatically.</p>
+                
+                <!-- Feedback Toast -->
+                <div class="form-feedback-toast hidden" id="form-toast"></div>
+
+                <form id="challan-entry-form" onsubmit="handleChallanSubmit(event)">
+                  <input type="hidden" id="form-challan-id" value="">
+                  
+                  <div class="input-group">
+                    <label for="form-challan-no">Challan Number</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-hashtag"></i>
+                      <input type="text" id="form-challan-no" required placeholder="e.g. CH-2026-90">
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-dealer-name">Dealer / Trader Name</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-building-flag"></i>
+                      <input type="text" id="form-dealer-name" required placeholder="e.g. Krishna Grain Agencies">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-challan-vehicle">Vehicle Number</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-truck"></i>
+                        <input type="text" id="form-challan-vehicle" placeholder="e.g. RJ-14-GD-8921">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-challan-driver">Driver Name</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="form-challan-driver" placeholder="e.g. Ram Singh Choudhary">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-challan-date">Challan Date</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar"></i>
+                        <input type="date" id="form-challan-date" required>
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-qrcode-input">Scan Challan QR</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-qrcode"></i>
+                        <input type="text" id="form-qrcode-input" placeholder="Click to scan QR or paste code">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-rice-bags">Rice Bags Qty</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-bowl-rice"></i>
+                        <input type="number" id="form-rice-bags" required value="0" min="0" oninput="calculateFormTotals()">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-wheat-bags">Wheat Bags Qty</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-wheat-awn"></i>
+                        <input type="number" id="form-wheat-bags" required value="0" min="0" oninput="calculateFormTotals()">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row calculations-highlight">
+                    <div class="calc-box">
+                      <span class="calc-label">Total Bags</span>
+                      <span class="calc-val" id="form-total-bags-display">0</span>
+                    </div>
+                    <div class="calc-box">
+                      <span class="calc-label">Total Amount</span>
+                      <span class="calc-val accent-val" id="form-amount-display">₹ 0</span>
+                    </div>
+                  </div>
+
+                  <div class="form-actions-row">
+                    <button type="button" class="btn btn-secondary" onclick="launchQrScanner()">
+                      <i class="fa-solid fa-camera"></i> Scan QR Code
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btn-form-submit">
+                      <i class="fa-solid fa-circle-check"></i> Save Record
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Monthly Consolidated Report Section -->
+          <div class="report-section-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-chart-pie"></i> Monthly Consolidated Ledger Reports</h3>
+              <p>Filter challans and review aggregate bags weight, rates, and cash collections.</p>
+            </div>
+            
+            <div class="report-filter-bar">
+              <div class="r-filters">
+                <div class="input-group-inline">
+                  <label for="report-select-month">Select Month</label>
+                  <select id="report-select-month">
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06" selected>June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                </div>
+                <div class="input-group-inline">
+                  <label for="report-select-year">Select Year</label>
+                  <select id="report-select-year">
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="generateMonthlyReport()">
+                  <i class="fa-solid fa-arrows-rotate"></i> Compile Ledger
+                </button>
+              </div>
+
+              <div class="r-actions">
+                <button class="btn btn-secondary btn-sm" onclick="exportReportToCSV()">
+                  <i class="fa-solid fa-file-csv"></i> Export to CSV
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                  <i class="fa-solid fa-print"></i> Print Report
+                </button>
+              </div>
+            </div>
+
+            <!-- Report Output Cards -->
+            <div class="report-results-grid hidden" id="report-results-container">
+              
+              <!-- Report Summary Statistics -->
+              <div class="report-summary-stats">
+                <div class="r-stat">
+                  <span class="r-label">Compiled Month</span>
+                  <span class="r-val" id="rep-display-month">June 2026</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Rice Bags</span>
+                  <span class="r-val" id="rep-total-rice">0</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Wheat Bags</span>
+                  <span class="r-val" id="rep-total-wheat">0</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Bags</span>
+                  <span class="r-val" id="rep-total-bags">0</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Grand Total Amount</span>
+                  <span class="r-val green-text" id="rep-total-amount">₹ 0</span>
+                </div>
+              </div>
+
+              <!-- Report Table -->
+              <div class="table-responsive">
+                <table class="dash-table min-table">
+                  <thead>
+                    <tr>
+                      <th>Challan No.</th>
+                      <th>Dealer Name</th>
+                      <th>Vehicle Number</th>
+                      <th>Driver Name</th>
+                      <th>Date</th>
+                      <th class="text-right">Rice Bags</th>
+                      <th class="text-right">Wheat Bags</th>
+                      <th class="text-right">Total Bags</th>
+                      <th class="text-right">Rate</th>
+                      <th class="text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-table-rows">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Report Empty State -->
+            <div class="report-empty-state" id="report-empty-container">
+              <i class="fa-solid fa-calculator"></i>
+              <p>Select Month and Year above and click "Compile Ledger" to review monthly totals.</p>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================= DRIVER TAB ================= -->
+        <div class="dash-tab-pane" id="pane-driver">
+          <!-- Summary Cards Section -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Total Payments</span>
+                  <h3 id="stat-driver-payments-count">0</h3>
+                </div>
+                <div class="card-icon blue-bg"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+              </div>
+              <div class="card-footer-desc">Cumulative Records</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Advances (This Month)</span>
+                  <h3 id="stat-driver-advances-this-month">₹ 0</h3>
+                </div>
+                <div class="card-icon green-bg"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+              </div>
+              <div class="card-footer-desc">Given to Drivers</div>
+            </div>
+          </div>
+
+          <!-- Master Workspace Grid -->
+          <div class="workspace-grid">
+            
+            <!-- Left Column: Records Table -->
+            <div class="workspace-table-panel">
+              <div class="panel-header">
+                <h3>Live Driver Ledger Database</h3>
+                
+                <!-- Search & Filters -->
+                <div class="filter-row">
+                  <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="driver-search" placeholder="Search Driver / Vehicle..." oninput="filterDriverTable()">
+                  </div>
+                  <div class="month-filter">
+                    <select id="driver-month-filter" onchange="filterDriverTable()">
+                      <option value="all">All Months</option>
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loader -->
+              <div id="driver-table-loader" class="table-spinner">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Retrieving Records...
+              </div>
+
+              <!-- Main Table -->
+              <div class="table-responsive">
+                <table class="dash-table" id="driver-data-table">
+                  <thead>
+                    <tr>
+                      <th>Driver Name</th>
+                      <th>Mobile Number</th>
+                      <th>Vehicle Number</th>
+                      <th class="text-right">Amount Given</th>
+                      <th>Date</th>
+                      <th>Payment Type</th>
+                      <th>Remarks</th>
+                      <th class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="driver-table-rows">
+                    <!-- Loaded dynamically via js -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Empty State -->
+              <div class="table-empty-state hidden" id="driver-table-empty">
+                <i class="fa-solid fa-id-card"></i>
+                <p>No driver payment records found matching your filters.</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Add/Edit Form Card -->
+            <div class="workspace-form-panel">
+              <div class="form-card">
+                <h3 id="driver-form-panel-title"><i class="fa-solid fa-user-plus"></i> Add Driver Advance</h3>
+                <p class="form-panel-subtitle">Record payment or advance given to carrier driver. Date defaults to today.</p>
+                
+                <!-- Feedback Toast -->
+                <div class="form-feedback-toast hidden" id="driver-form-toast"></div>
+
+                <form id="driver-entry-form" onsubmit="handleDriverSubmit(event)">
+                  <input type="hidden" id="form-driver-id" value="">
+                  
+                  <div class="input-group">
+                    <label for="form-driver-name">Driver Name</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-user"></i>
+                      <input type="text" id="form-driver-name" required placeholder="e.g. Ram Singh Choudhary">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-driver-mobile">Mobile Number</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="tel" id="form-driver-mobile" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-driver-vehicle">Vehicle Number</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-truck"></i>
+                        <input type="text" id="form-driver-vehicle" required placeholder="e.g. RJ-14-GD-8921">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-driver-amount">Amount Given / Advance</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                        <input type="number" id="form-driver-amount" required placeholder="e.g. 5000" min="1">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-driver-date">Payment Date</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar"></i>
+                        <input type="date" id="form-driver-date" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-driver-type">Payment Type</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-credit-card"></i>
+                      <select id="form-driver-type" required>
+                        <option value="Cash" selected>Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Bank">Bank Transfer</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-driver-remarks">Remarks</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-comment-dots"></i>
+                      <input type="text" id="form-driver-remarks" placeholder="e.g. Advance for highway tolls">
+                    </div>
+                  </div>
+
+                  <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary" id="btn-driver-form-submit">
+                      <i class="fa-solid fa-circle-check"></i> Save Record
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-driver-form-cancel" onclick="resetDriverForm()">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Monthly Consolidated Report Section -->
+          <div class="report-section-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-chart-pie"></i> Monthly Driver Ledger Compilation</h3>
+              <p>Filter logs and compile totals given to drivers during selected duration.</p>
+            </div>
+            
+            <div class="report-filter-bar">
+              <div class="r-filters">
+                <div class="input-group-inline">
+                  <label for="driver-report-month">Select Month</label>
+                  <select id="driver-report-month">
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                </div>
+                <div class="input-group-inline">
+                  <label for="driver-report-year">Select Year</label>
+                  <select id="driver-report-year">
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="generateDriverMonthlyReport()">
+                  <i class="fa-solid fa-arrows-rotate"></i> Compile Ledger
+                </button>
+              </div>
+
+              <div class="r-actions">
+                <button class="btn btn-secondary btn-sm" onclick="exportDriverReportToCSV()">
+                  <i class="fa-solid fa-file-csv"></i> Export to CSV
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                  <i class="fa-solid fa-print"></i> Print Report
+                </button>
+              </div>
+            </div>
+
+            <!-- Report Output Cards -->
+            <div class="report-results-grid hidden" id="driver-report-results-container">
+              
+              <!-- Report Summary Statistics -->
+              <div class="report-summary-stats">
+                <div class="r-stat">
+                  <span class="r-label">Compiled Month</span>
+                  <span class="r-val" id="driver-rep-display-month">June 2026</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Amount Paid</span>
+                  <span class="r-val green-text" id="driver-rep-total-amount">₹ 0</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Unique Drivers Paid</span>
+                  <span class="r-val" id="driver-rep-unique-drivers">0</span>
+                </div>
+              </div>
+
+              <!-- Report Table -->
+              <div class="table-responsive">
+                <table class="dash-table min-table">
+                  <thead>
+                    <tr>
+                      <th>Driver Name</th>
+                      <th>Mobile Number</th>
+                      <th>Vehicle Number</th>
+                      <th class="text-right">Total Advance Given</th>
+                      <th class="text-right">Transaction Count</th>
+                    </tr>
+                  </thead>
+                  <tbody id="driver-report-table-rows">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Report Empty State -->
+            <div class="report-empty-state" id="driver-report-empty-container">
+              <i class="fa-solid fa-calculator"></i>
+              <p>Select Month and Year above and click "Compile Ledger" to review driver payments.</p>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ================= MECHANIC TAB ================= -->
+        <div class="dash-tab-pane" id="pane-mechanic">
+          <!-- Summary Cards Section -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Services Logged</span>
+                  <h3 id="stat-mechanic-invoices-count">0</h3>
+                </div>
+                <div class="card-icon blue-bg"><i class="fa-solid fa-file-lines"></i></div>
+              </div>
+              <div class="card-footer-desc">Cumulative Records</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Expense (This Month)</span>
+                  <h3 id="stat-mechanic-cost-this-month">₹ 0</h3>
+                </div>
+                <div class="card-icon green-bg"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+              </div>
+              <div class="card-footer-desc">Workshop Maintenance</div>
+            </div>
+          </div>
+
+          <!-- Master Workspace Grid -->
+          <div class="workspace-grid">
+            
+            <!-- Left Column: Records Table -->
+            <div class="workspace-table-panel">
+              <div class="panel-header">
+                <h3>Live Fleet Maintenance Database</h3>
+                
+                <!-- Search & Filters -->
+                <div class="filter-row">
+                  <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="mechanic-search" placeholder="Search Mechanic / Vehicle..." oninput="filterMechanicTable()">
+                  </div>
+                  <div class="month-filter">
+                    <select id="mechanic-month-filter" onchange="filterMechanicTable()">
+                      <option value="all">All Months</option>
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loader -->
+              <div id="mechanic-table-loader" class="table-spinner">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Retrieving Records...
+              </div>
+
+              <!-- Main Table -->
+              <div class="table-responsive">
+                <table class="dash-table" id="mechanic-data-table">
+                  <thead>
+                    <tr>
+                      <th>Mechanic Name</th>
+                      <th>Vehicle Number</th>
+                      <th>Work Description</th>
+                      <th>Parts Used</th>
+                      <th class="text-right">Amount Paid</th>
+                      <th>Date</th>
+                      <th>Paid By</th>
+                      <th>Remarks</th>
+                      <th class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mechanic-table-rows">
+                    <!-- Loaded dynamically via js -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Empty State -->
+              <div class="table-empty-state hidden" id="mechanic-table-empty">
+                <i class="fa-solid fa-wrench"></i>
+                <p>No mechanic expense records found matching your filters.</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Add/Edit Form Card -->
+            <div class="workspace-form-panel">
+              <div class="form-card">
+                <h3 id="mechanic-form-panel-title"><i class="fa-solid fa-screwdriver-wrench"></i> Add Workshop Record</h3>
+                <p class="form-panel-subtitle">Create maintenance log for vehicles. Date defaults to today.</p>
+                
+                <!-- Feedback Toast -->
+                <div class="form-feedback-toast hidden" id="mechanic-form-toast"></div>
+
+                <form id="mechanic-entry-form" onsubmit="handleMechanicSubmit(event)">
+                  <input type="hidden" id="form-mechanic-id" value="">
+                  
+                  <div class="input-group">
+                    <label for="form-mechanic-name">Mechanic Name</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-user-gear"></i>
+                      <input type="text" id="form-mechanic-name" required placeholder="e.g. Jaipur Garage Association">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-mechanic-vehicle">Vehicle Number</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-truck"></i>
+                        <input type="text" id="form-mechanic-vehicle" required placeholder="e.g. RJ-14-GD-8921">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-mechanic-amount">Amount Paid</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                        <input type="number" id="form-mechanic-amount" required placeholder="e.g. 7500" min="1">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-mechanic-date">Service Date</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar"></i>
+                        <input type="date" id="form-mechanic-date" required>
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-mechanic-paidby">Paid By</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-user-check"></i>
+                        <input type="text" id="form-mechanic-paidby" required placeholder="e.g. Choudhary Admin">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-mechanic-work">Work Description</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-hammer"></i>
+                      <input type="text" id="form-mechanic-work" required placeholder="e.g. Gearbox tuning and alignment">
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-mechanic-parts">Parts Used</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-gears"></i>
+                      <input type="text" id="form-mechanic-parts" placeholder="e.g. Spindle gears, gasket seal">
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-mechanic-remarks">Remarks</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-comment-dots"></i>
+                      <input type="text" id="form-mechanic-remarks" placeholder="e.g. Routine 50K maintenance">
+                    </div>
+                  </div>
+
+                  <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary" id="btn-mechanic-form-submit">
+                      <i class="fa-solid fa-circle-check"></i> Save Record
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-mechanic-form-cancel" onclick="resetMechanicForm()">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Monthly Consolidated Report Section -->
+          <div class="report-section-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-chart-pie"></i> Monthly Maintenance Expense Reports</h3>
+              <p>Filter logs and compile totals paid for mechanic repairs during selected duration.</p>
+            </div>
+            
+            <div class="report-filter-bar">
+              <div class="r-filters">
+                <div class="input-group-inline">
+                  <label for="mechanic-report-month">Select Month</label>
+                  <select id="mechanic-report-month">
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                </div>
+                <div class="input-group-inline">
+                  <label for="mechanic-report-year">Select Year</label>
+                  <select id="mechanic-report-year">
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="generateMechanicMonthlyReport()">
+                  <i class="fa-solid fa-arrows-rotate"></i> Compile Ledger
+                </button>
+              </div>
+
+              <div class="r-actions">
+                <button class="btn btn-secondary btn-sm" onclick="exportMechanicReportToCSV()">
+                  <i class="fa-solid fa-file-csv"></i> Export to CSV
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                  <i class="fa-solid fa-print"></i> Print Report
+                </button>
+              </div>
+            </div>
+
+            <!-- Report Output Cards -->
+            <div class="report-results-grid hidden" id="mechanic-report-results-container">
+              
+              <!-- Report Summary Statistics -->
+              <div class="report-summary-stats">
+                <div class="r-stat">
+                  <span class="r-label">Compiled Month</span>
+                  <span class="r-val" id="mechanic-rep-display-month">June 2026</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Expense</span>
+                  <span class="r-val green-text" id="mechanic-rep-total-amount">₹ 0</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Services Logged</span>
+                  <span class="r-val" id="mechanic-rep-total-tasks">0</span>
+                </div>
+              </div>
+
+              <!-- Report Table -->
+              <div class="table-responsive">
+                <table class="dash-table min-table">
+                  <thead>
+                    <tr>
+                      <th>Mechanic Name</th>
+                      <th>Vehicle Number</th>
+                      <th>Work Description</th>
+                      <th>Parts Used</th>
+                      <th class="text-right">Amount Paid</th>
+                      <th>Date</th>
+                      <th>Paid By</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mechanic-report-table-rows">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Report Empty State -->
+            <div class="report-empty-state" id="mechanic-report-empty-container">
+              <i class="fa-solid fa-calculator"></i>
+              <p>Select Month and Year above and click "Compile Ledger" to review workshop expenses.</p>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ================= DIESEL TAB ================= -->
+        <div class="dash-tab-pane" id="pane-diesel">
+          <!-- Summary Cards Section -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Total Liters (This Month)</span>
+                  <h3 id="stat-diesel-liters-this-month">0 L</h3>
+                </div>
+                <div class="card-icon blue-bg"><i class="fa-solid fa-droplet"></i></div>
+              </div>
+              <div class="card-footer-desc">Volume Given to Fleet</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Diesel Cost (This Month)</span>
+                  <h3 id="stat-diesel-cost-this-month">₹ 0</h3>
+                </div>
+                <div class="card-icon green-bg"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+              </div>
+              <div class="card-footer-desc">Fuel Cost Expenditures</div>
+            </div>
+          </div>
+
+          <!-- Master Workspace Grid -->
+          <div class="workspace-grid">
+            
+            <!-- Left Column: Records Table -->
+            <div class="workspace-table-panel">
+              <div class="panel-header">
+                <h3>Live Diesel Tracker Database</h3>
+                
+                <!-- Search & Filters -->
+                <div class="filter-row">
+                  <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="diesel-search" placeholder="Search Driver / Vehicle..." oninput="filterDieselTable()">
+                  </div>
+                  <div class="month-filter">
+                    <select id="diesel-month-filter" onchange="filterDieselTable()">
+                      <option value="all">All Months</option>
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loader -->
+              <div id="diesel-table-loader" class="table-spinner">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Retrieving Records...
+              </div>
+
+              <!-- Main Table -->
+              <div class="table-responsive">
+                <table class="dash-table" id="diesel-data-table">
+                  <thead>
+                    <tr>
+                      <th>Driver Name</th>
+                      <th>Vehicle Number</th>
+                      <th class="text-right">Quantity (L)</th>
+                      <th class="text-right">Rate / L</th>
+                      <th class="text-right">Total Amount</th>
+                      <th>Date</th>
+                      <th>Given By</th>
+                      <th>Remarks</th>
+                      <th class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="diesel-table-rows">
+                    <!-- Loaded dynamically via js -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Empty State -->
+              <div class="table-empty-state hidden" id="diesel-table-empty">
+                <i class="fa-solid fa-gas-pump"></i>
+                <p>No diesel log records found matching your filters.</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Add/Edit Form Card -->
+            <div class="workspace-form-panel">
+              <div class="form-card">
+                <h3 id="diesel-form-panel-title"><i class="fa-solid fa-gas-pump"></i> Add Diesel Log</h3>
+                <p class="form-panel-subtitle">Record fuel billing. Total diesel amount is calculated automatically.</p>
+                
+                <!-- Feedback Toast -->
+                <div class="form-feedback-toast hidden" id="diesel-form-toast"></div>
+
+                <form id="diesel-entry-form" onsubmit="handleDieselSubmit(event)">
+                  <input type="hidden" id="form-diesel-id" value="">
+                  
+                  <div class="input-group">
+                    <label for="form-diesel-driver">Driver Name</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-user"></i>
+                      <input type="text" id="form-diesel-driver" required placeholder="e.g. Ram Singh Choudhary">
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-diesel-vehicle">Vehicle Number</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-truck"></i>
+                      <input type="text" id="form-diesel-vehicle" required placeholder="e.g. RJ-14-GD-8921">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-diesel-quantity">Diesel Quantity (Liters)</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-droplet"></i>
+                        <input type="number" id="form-diesel-quantity" required placeholder="e.g. 150" min="1" step="0.01" oninput="calculateDieselFormTotals()">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-diesel-rate">Diesel Rate (per Liter)</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-tag"></i>
+                        <input type="number" id="form-diesel-rate" required placeholder="e.g. 90" min="1" step="0.01" oninput="calculateDieselFormTotals()">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row calculations-highlight">
+                    <div class="calc-box">
+                      <span class="calc-label">Total Diesel Amount</span>
+                      <span class="calc-val accent-val" id="form-diesel-amount-display">₹ 0</span>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-diesel-date">Filling Date</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar"></i>
+                        <input type="date" id="form-diesel-date" required>
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-diesel-givenby">Given By</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-user-check"></i>
+                        <input type="text" id="form-diesel-givenby" required placeholder="e.g. Choudhary Admin">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-diesel-remarks">Remarks</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-comment-dots"></i>
+                      <input type="text" id="form-diesel-remarks" placeholder="e.g. Tank refill VKI Station">
+                    </div>
+                  </div>
+
+                  <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary" id="btn-diesel-form-submit">
+                      <i class="fa-solid fa-circle-check"></i> Save Record
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-diesel-form-cancel" onclick="resetDieselForm()">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Monthly Consolidated Report Section -->
+          <div class="report-section-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-chart-pie"></i> Monthly Driver-wise Diesel Ledger Reports</h3>
+              <p>Filter fuel logs and review driver-wise consumption totals during selected month.</p>
+            </div>
+            
+            <div class="report-filter-bar">
+              <div class="r-filters">
+                <div class="input-group-inline">
+                  <label for="diesel-report-month">Select Month</label>
+                  <select id="diesel-report-month">
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                </div>
+                <div class="input-group-inline">
+                  <label for="diesel-report-year">Select Year</label>
+                  <select id="diesel-report-year">
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="generateDieselMonthlyReport()">
+                  <i class="fa-solid fa-arrows-rotate"></i> Compile Ledger
+                </button>
+              </div>
+
+              <div class="r-actions">
+                <button class="btn btn-secondary btn-sm" onclick="exportDieselReportToCSV()">
+                  <i class="fa-solid fa-file-csv"></i> Export to CSV
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                  <i class="fa-solid fa-print"></i> Print Report
+                </button>
+              </div>
+            </div>
+
+            <!-- Report Output Cards -->
+            <div class="report-results-grid hidden" id="diesel-report-results-container">
+              
+              <!-- Report Summary Statistics -->
+              <div class="report-summary-stats">
+                <div class="r-stat">
+                  <span class="r-label">Compiled Month</span>
+                  <span class="r-val" id="diesel-rep-display-month">June 2026</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Liters Filled</span>
+                  <span class="r-val text-white" id="diesel-rep-total-liters">0 L</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Grand Total Cost</span>
+                  <span class="r-val green-text" id="diesel-rep-total-amount">₹ 0</span>
+                </div>
+              </div>
+
+              <!-- Report Table -->
+              <div class="table-responsive">
+                <table class="dash-table min-table">
+                  <thead>
+                    <tr>
+                      <th>Driver Name</th>
+                      <th class="text-right">Total Liters</th>
+                      <th class="text-right">Average Rate</th>
+                      <th class="text-right">Total Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="diesel-report-table-rows">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Report Empty State -->
+            <div class="report-empty-state" id="diesel-report-empty-container">
+              <i class="fa-solid fa-calculator"></i>
+              <p>Select Month and Year above and click "Compile Ledger" to review diesel reports.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ================= VEHICLE PROFILES TAB ================= -->
+        <div class="dash-tab-pane" id="pane-vehicle">
+          <!-- Summary Cards Section -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Total Vehicles</span>
+                  <h3 id="stat-vehicle-total">0</h3>
+                </div>
+                <div class="card-icon blue-bg"><i class="fa-solid fa-truck"></i></div>
+              </div>
+              <div class="card-footer-desc">Registered Fleet</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Expiry Alerts</span>
+                  <h3 id="stat-vehicle-expiring">0</h3>
+                </div>
+                <div class="card-icon orange-bg"><i class="fa-solid fa-bell"></i></div>
+              </div>
+              <div class="card-footer-desc">Documents Expiring Soon/Expired</div>
+            </div>
+          </div>
+
+          <!-- Master Workspace Grid -->
+          <div class="workspace-grid">
+            
+            <!-- Left Column: Records Table -->
+            <div class="workspace-table-panel">
+              <div class="panel-header">
+                <h3>Vehicle Registry Database</h3>
+                
+                <!-- Search & Filters -->
+                <div class="filter-row">
+                  <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="vehicle-search" placeholder="Search Vehicle Number / Owner..." oninput="filterVehicleTable()">
+                  </div>
+                  <div class="month-filter">
+                    <select id="vehicle-expiry-filter" onchange="filterVehicleTable()">
+                      <option value="all">All Documents</option>
+                      <option value="expiring_soon">Expiring Soon / Expired</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loader -->
+              <div id="vehicle-table-loader" class="table-spinner hidden">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Retrieving Records...
+              </div>
+
+              <!-- Main Table -->
+              <div class="table-responsive">
+                <table class="dash-table" id="vehicles-data-table">
+                  <thead>
+                    <tr>
+                      <th>Vehicle Number</th>
+                      <th>Vehicle Type</th>
+                      <th>Owner Name</th>
+                      <th>Tax Expiry</th>
+                      <th>Insurance Expiry</th>
+                      <th>PUC Expiry</th>
+                      <th>Fitness Expiry</th>
+                      <th>Permit Expiry</th>
+                      <th>RC Doc</th>
+                      <th class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vehicle-table-rows">
+                    <!-- Loaded dynamically via js -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Empty State -->
+              <div class="table-empty-state hidden" id="vehicle-table-empty">
+                <i class="fa-solid fa-truck"></i>
+                <p>No vehicle profiles found matching your filters.</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Add/Edit Form Card -->
+            <div class="workspace-form-panel">
+              <div class="form-card">
+                <h3 id="vehicle-form-panel-title"><i class="fa-solid fa-truck-ramp-box"></i> Add Vehicle Profile</h3>
+                <p class="form-panel-subtitle">Register and manage fleet profiles. Expiries trigger alerts.</p>
+                
+                <!-- Feedback Toast -->
+                <div class="form-feedback-toast hidden" id="vehicle-form-toast"></div>
+
+                <form id="vehicle-entry-form" onsubmit="handleVehicleSubmit(event)">
+                  <input type="hidden" id="form-vehicle-id" value="">
+                  
+                  <div class="input-group">
+                    <label for="form-vehicle-number">Vehicle Number</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-hashtag"></i>
+                      <input type="text" id="form-vehicle-number" required placeholder="e.g. RJ-14-GD-8921">
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-vehicle-type">Vehicle Type</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-truck-front"></i>
+                      <input type="text" id="form-vehicle-type" required placeholder="e.g. 10-Wheeler HGV Truck">
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-vehicle-owner">Owner Name</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-user-tie"></i>
+                      <input type="text" id="form-vehicle-owner" required placeholder="e.g. Choudhary Transport Pvt. Ltd.">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-vehicle-tax-expiry">Road Tax Expiry</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <input type="date" id="form-vehicle-tax-expiry" required>
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-vehicle-insurance-expiry">Insurance Expiry</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <input type="date" id="form-vehicle-insurance-expiry" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-vehicle-puc-expiry">PUC Expiry</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <input type="date" id="form-vehicle-puc-expiry" required>
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-vehicle-fitness-expiry">Fitness Expiry</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <input type="date" id="form-vehicle-fitness-expiry" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-vehicle-permit-expiry">Permit Expiry</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-calendar-days"></i>
+                      <input type="date" id="form-vehicle-permit-expiry" required>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label>Registration Certificate (RC)</label>
+                    <label class="btn-file-upload">
+                      <i class="fa-solid fa-cloud-arrow-up"></i> Upload RC Document
+                      <input type="file" id="form-vehicle-rc-upload" onchange="handleFileSelected(event, 'rc')">
+                    </label>
+                    <input type="hidden" id="form-vehicle-rc-data" value="">
+                    <div id="rc-preview-container" class="preview-container hidden">
+                      <img id="rc-preview-img" class="preview-thumbnail" src="" alt="RC Preview">
+                      <div class="preview-info">
+                        <strong id="rc-preview-name">rc_document.png</strong>
+                        <span>Attached</span>
+                      </div>
+                      <button type="button" class="preview-remove-btn" onclick="removeUploadedFile('rc')"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-vehicle-remarks">Remarks</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-comment-dots"></i>
+                      <input type="text" id="form-vehicle-remarks" placeholder="e.g. Delhi-Mumbai route assigned">
+                    </div>
+                  </div>
+
+                  <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary" id="btn-vehicle-form-submit">
+                      <i class="fa-solid fa-circle-check"></i> Save Record
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-vehicle-form-cancel" onclick="resetVehicleForm()">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Consolidated Vehicle-Wise Report Section -->
+          <div class="report-section-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-chart-pie"></i> Vehicle-Wise Consolidated Reports</h3>
+              <p>Compile comprehensive logs (Diesel, Mechanic costs, Challan Bags/Amounts) for all vehicles.</p>
+            </div>
+            
+            <div class="report-filter-bar">
+              <div class="r-filters">
+                <div class="input-group-inline">
+                  <label for="vehicle-report-month">Select Month</label>
+                  <select id="vehicle-report-month">
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                </div>
+                <div class="input-group-inline">
+                  <label for="vehicle-report-year">Select Year</label>
+                  <select id="vehicle-report-year">
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="generateVehicleConsolidatedReport()">
+                  <i class="fa-solid fa-arrows-rotate"></i> Compile Report
+                </button>
+              </div>
+
+              <div class="r-actions">
+                <button class="btn btn-secondary btn-sm" onclick="exportVehicleReportToCSV()">
+                  <i class="fa-solid fa-file-csv"></i> Export to CSV
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.print()">
+                  <i class="fa-solid fa-print"></i> Print Report
+                </button>
+              </div>
+            </div>
+
+            <!-- Report Output Cards -->
+            <div class="report-results-grid hidden" id="vehicle-report-results-container">
+              
+              <!-- Report Summary Statistics -->
+              <div class="report-summary-stats">
+                <div class="r-stat">
+                  <span class="r-label">Compiled Month</span>
+                  <span class="r-val" id="vehicle-rep-display-month">June 2026</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Diesel given</span>
+                  <span class="r-val text-white" id="vehicle-rep-total-diesel">0 L</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Diesel Cost</span>
+                  <span class="r-val orange-text" id="vehicle-rep-total-diesel-cost">₹ 0</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Total Mechanic Cost</span>
+                  <span class="r-val red-text" id="vehicle-rep-total-mechanic">₹ 0</span>
+                </div>
+                <div class="r-stat">
+                  <span class="r-label">Grand Total Challans</span>
+                  <span class="r-val green-text" id="vehicle-rep-total-challans">₹ 0</span>
+                </div>
+              </div>
+
+              <!-- Report Table -->
+              <div class="table-responsive">
+                <table class="dash-table min-table">
+                  <thead>
+                    <tr>
+                      <th>Vehicle Number</th>
+                      <th>Vehicle Type</th>
+                      <th class="text-right">Total Diesel (L)</th>
+                      <th class="text-right">Diesel Cost</th>
+                      <th class="text-right">Mechanic Expense</th>
+                      <th class="text-right">Total Challan Bags</th>
+                      <th class="text-right">Challan Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vehicle-report-table-rows">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Report Empty State -->
+            <div class="report-empty-state" id="vehicle-report-empty-container">
+              <i class="fa-solid fa-calculator"></i>
+              <p>Select Month and Year above and click "Compile Report" to review consolidated vehicle metrics.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ================= DRIVER PROFILES TAB ================= -->
+        <div class="dash-tab-pane" id="pane-driver-profile">
+          <!-- Summary Cards Section -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Driver Registry</span>
+                  <h3 id="stat-dp-total">0</h3>
+                </div>
+                <div class="card-icon blue-bg"><i class="fa-solid fa-id-card-clip"></i></div>
+              </div>
+              <div class="card-footer-desc">Registered Drivers</div>
+            </div>
+            <div class="stat-card">
+              <div class="card-inner">
+                <div>
+                  <span class="card-title">Assigned Vehicles</span>
+                  <h3 id="stat-dp-assigned">0</h3>
+                </div>
+                <div class="card-icon green-bg"><i class="fa-solid fa-link"></i></div>
+              </div>
+              <div class="card-footer-desc">Active Drivers Assigned</div>
+            </div>
+          </div>
+
+          <!-- Master Workspace Grid -->
+          <div class="workspace-grid">
+            
+            <!-- Left Column: Records Table -->
+            <div class="workspace-table-panel">
+              <div class="panel-header">
+                <h3>Driver Profile Database</h3>
+                
+                <!-- Search & Filters -->
+                <div class="filter-row">
+                  <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="driver-profile-search" placeholder="Search by name, mobile, license..." oninput="filterDriverProfileTable()">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loader -->
+              <div id="driver-profile-table-loader" class="table-spinner hidden">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Retrieving Records...
+              </div>
+
+              <!-- Main Table -->
+              <div class="table-responsive">
+                <table class="dash-table" id="driver-profiles-data-table">
+                  <thead>
+                    <tr>
+                      <th>Photo</th>
+                      <th>Driver Name</th>
+                      <th>Mobile Number</th>
+                      <th>Assigned Vehicle</th>
+                      <th>Licence Number</th>
+                      <th>Joining Date</th>
+                      <th>Aadhaar / License Docs</th>
+                      <th class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="driver-profile-table-rows">
+                    <!-- Loaded dynamically via js -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- Empty State -->
+              <div class="table-empty-state hidden" id="driver-profile-table-empty">
+                <i class="fa-solid fa-id-card-clip"></i>
+                <p>No driver profiles found matching your search.</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Add/Edit Form Card -->
+            <div class="workspace-form-panel">
+              <div class="form-card">
+                <h3 id="driver-profile-form-panel-title"><i class="fa-solid fa-user-plus"></i> Add Driver Profile</h3>
+                <p class="form-panel-subtitle">Create profiles for carrier operators. Track DL and Aadhaar details.</p>
+                
+                <!-- Feedback Toast -->
+                <div class="form-feedback-toast hidden" id="driver-profile-form-toast"></div>
+
+                <form id="driver-profile-entry-form" onsubmit="handleDriverProfileSubmit(event)">
+                  <input type="hidden" id="form-dp-id" value="">
+                  
+                  <div class="input-group">
+                    <label for="form-dp-name">Driver Name</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-user"></i>
+                      <input type="text" id="form-dp-name" required placeholder="e.g. Ram Singh Choudhary">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-dp-mobile">Mobile Number</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="tel" id="form-dp-mobile" required placeholder="e.g. 9414012345" pattern="[0-9]{10}">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-dp-assigned-vehicle">Assigned Vehicle</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-truck"></i>
+                        <input type="text" id="form-dp-assigned-vehicle" placeholder="e.g. RJ-14-GD-8921">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-dp-address">Address</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-map-location-dot"></i>
+                      <input type="text" id="form-dp-address" required placeholder="e.g. VPO Ringas, Sikar, Rajasthan">
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-dp-aadhaar-num">Aadhaar Number</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-fingerprint"></i>
+                        <input type="text" id="form-dp-aadhaar-num" required placeholder="e.g. 123456789012" pattern="[0-9]{12}">
+                      </div>
+                    </div>
+                    <div class="input-group">
+                      <label for="form-dp-license-num">Driving Licence No.</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-address-card"></i>
+                        <input type="text" id="form-dp-license-num" required placeholder="e.g. DL-14202619082">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="input-group">
+                      <label for="form-dp-joining-date">Joining Date</label>
+                      <div class="input-with-icon">
+                        <i class="fa-solid fa-calendar"></i>
+                        <input type="date" id="form-dp-joining-date" required>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Upload slots -->
+                  <div class="input-group">
+                    <label>Driver Profile Photo</label>
+                    <label class="btn-file-upload">
+                      <i class="fa-solid fa-camera"></i> Upload Photo
+                      <input type="file" id="form-dp-photo-upload" onchange="handleFileSelected(event, 'dp_photo')">
+                    </label>
+                    <input type="hidden" id="form-dp-photo-data" value="">
+                    <div id="dp_photo-preview-container" class="preview-container hidden">
+                      <img id="dp_photo-preview-img" class="preview-thumbnail" src="" alt="Driver Preview">
+                      <div class="preview-info">
+                        <strong id="dp_photo-preview-name">photo.jpg</strong>
+                        <span>Attached</span>
+                      </div>
+                      <button type="button" class="preview-remove-btn" onclick="removeUploadedFile('dp_photo')"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label>Aadhaar Photo Upload</label>
+                    <label class="btn-file-upload">
+                      <i class="fa-solid fa-fingerprint"></i> Upload Aadhaar Card
+                      <input type="file" id="form-dp-aadhaar-upload" onchange="handleFileSelected(event, 'aadhaar')">
+                    </label>
+                    <input type="hidden" id="form-dp-aadhaar-data" value="">
+                    <div id="aadhaar-preview-container" class="preview-container hidden">
+                      <img id="aadhaar-preview-img" class="preview-thumbnail" src="" alt="Aadhaar Preview">
+                      <div class="preview-info">
+                        <strong id="aadhaar-preview-name">aadhaar.jpg</strong>
+                        <span>Attached</span>
+                      </div>
+                      <button type="button" class="preview-remove-btn" onclick="removeUploadedFile('aadhaar')"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label>Driving Licence (DL) Photo</label>
+                    <label class="btn-file-upload">
+                      <i class="fa-solid fa-address-card"></i> Upload DL Photo
+                      <input type="file" id="form-dp-license-upload" onchange="handleFileSelected(event, 'license')">
+                    </label>
+                    <input type="hidden" id="form-dp-license-data" value="">
+                    <div id="license-preview-container" class="preview-container hidden">
+                      <img id="license-preview-img" class="preview-thumbnail" src="" alt="DL Preview">
+                      <div class="preview-info">
+                        <strong id="license-preview-name">license.jpg</strong>
+                        <span>Attached</span>
+                      </div>
+                      <button type="button" class="preview-remove-btn" onclick="removeUploadedFile('license')"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="form-dp-remarks">Remarks</label>
+                    <div class="input-with-icon">
+                      <i class="fa-solid fa-comment-dots"></i>
+                      <input type="text" id="form-dp-remarks" placeholder="e.g. Heavy Duty Class, Clean History">
+                    </div>
+                  </div>
+
+                  <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary" id="btn-driver-profile-form-submit">
+                      <i class="fa-solid fa-circle-check"></i> Save Profile
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-driver-profile-form-cancel" onclick="resetDriverProfileForm()">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Driver Audit History Section -->
+          <div class="report-section-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-magnifying-glass-chart"></i> Driver Audit Ledger Lookup</h3>
+              <p>Audit individual logs for payments, diesel receipts, consignment logs, and assignments.</p>
+            </div>
+            
+            <div class="report-filter-bar">
+              <div class="r-filters" style="align-items: center;">
+                <div class="input-group-inline">
+                  <label for="audit-select-driver">Select Driver Profile</label>
+                  <select id="audit-select-driver">
+                    <option value="">-- Select Driver --</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="retrieveDriverAuditLedger()">
+                  <i class="fa-solid fa-search"></i> Retrieve Audit History
+                </button>
+              </div>
+            </div>
+
+            <!-- Audit Results tabbed layout -->
+            <div class="report-results-grid hidden" id="audit-results-container">
+              
+              <!-- Tab selection within audit panel -->
+              <div class="audit-subtabs">
+                <button class="audit-subtab-btn active" id="audit-subtab-challans" onclick="switchAuditSubtab('challans')">Consignment Challans</button>
+                <button class="audit-subtab-btn" id="audit-subtab-diesel" onclick="switchAuditSubtab('diesel')">Diesel Refills</button>
+                <button class="audit-subtab-btn" id="audit-subtab-payments" onclick="switchAuditSubtab('payments')">Advance Payments</button>
+              </div>
+
+              <!-- Sub-tab 1: Challans -->
+              <div class="audit-tab-content active" id="audit-subpane-challans">
+                <div class="table-responsive">
+                  <table class="dash-table min-table">
+                    <thead>
+                      <tr>
+                        <th>Challan No</th>
+                        <th>Dealer Name</th>
+                        <th>Vehicle Number</th>
+                        <th>Date</th>
+                        <th class="text-right">Rice Bags</th>
+                        <th class="text-right">Wheat Bags</th>
+                        <th class="text-right">Total Bags</th>
+                        <th class="text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody id="audit-challans-table-rows">
+                      <!-- Loaded dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Sub-tab 2: Diesel -->
+              <div class="audit-tab-content" id="audit-subpane-diesel">
+                <div class="table-responsive">
+                  <table class="dash-table min-table">
+                    <thead>
+                      <tr>
+                        <th>Vehicle Number</th>
+                        <th class="text-right">Quantity (L)</th>
+                        <th class="text-right">Rate</th>
+                        <th class="text-right">Total Amount</th>
+                        <th>Date</th>
+                        <th>Given By</th>
+                        <th>Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody id="audit-diesel-table-rows">
+                      <!-- Loaded dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Sub-tab 3: Payments -->
+              <div class="audit-tab-content" id="audit-subpane-payments">
+                <div class="table-responsive">
+                  <table class="dash-table min-table">
+                    <thead>
+                      <tr>
+                        <th>Vehicle Number</th>
+                        <th class="text-right">Amount Given</th>
+                        <th>Payment Date</th>
+                        <th>Payment Type</th>
+                        <th>Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody id="audit-payments-table-rows">
+                      <!-- Loaded dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Audit Empty State -->
+            <div class="report-empty-state" id="audit-report-empty-container">
+              <i class="fa-solid fa-user-clock"></i>
+              <p>Select a driver profile above and click "Retrieve Audit History" to compile logs.</p>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+
+  <!-- Document Preview Modal -->
+  <div class="modal-overlay hidden" id="doc-preview-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="doc-modal-title"><i class="fa-solid fa-file-image"></i> Document View</h3>
+        <button class="modal-close" onclick="closeDocPreviewModal()">&times;</button>
+      </div>
+      <div class="modal-body text-center" style="background: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 300px;">
+        <img id="doc-modal-img" src="" alt="Document Preview" style="max-width: 100%; max-height: 60vh; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+        <p id="doc-modal-empty" class="text-muted hidden">No document attached.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm" onclick="closeDocPreviewModal()">Close</button>
+      </div>
+    </div>
+  </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Invoice View Modal -->
+  <div class="modal-overlay hidden" id="challan-view-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-receipt"></i> Official Consignment Slip</h3>
+        <button class="modal-close" onclick="closeChallanModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-slip-content">
+        <!-- Renders dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="printChallanSlip()"><i class="fa-solid fa-print"></i> Print Slip</button>
+        <button class="btn btn-primary btn-sm" onclick="closeChallanModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

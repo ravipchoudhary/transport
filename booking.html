@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Choudhary Transport - Book a shipment and generate a dispatch invoice instantly.">
+  <title>Book Shipment | Choudhary Transport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <header id="site-header">
+    <div class="header-container">
+      <a href="/" class="logo" id="header-logo">
+        <span class="logo-icon"><i class="fa-solid fa-truck-fast"></i></span>
+        <span class="logo-text">CHOUDHARY<span class="accent-text">TRANSPORT</span></span>
+      </a>
+      <nav id="main-nav">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/services" class="nav-link">Services</a>
+        <a href="/fleet" class="nav-link">Our Fleet</a>
+        <a href="/booking" class="nav-link active">Quick Book</a>
+        <a href="/tools" class="nav-link">Client Portal</a>
+        <a href="/login.html" class="nav-link">Admin Portal</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/tools" class="btn btn-secondary">Client Portal</a>
+        <button class="mobile-nav-toggle" id="mobile-toggle" aria-label="Toggle Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main style="padding-top: 100px; padding-bottom: 80px;">
+    <section id="booking-hero">
+      <div class="grid-container">
+        <div class="section-header">
+          <span class="section-tag">Quick Dispatch</span>
+          <h2>Book Your Cargo in Minutes</h2>
+          <p>Fill the dispatch details below and get a booking summary instantly without waiting.</p>
+        </div>
+        <div class="booking-grid">
+          <div class="booking-form-card">
+            <h3>Shipment Booking Form</h3>
+            <form id="booking-form" onsubmit="handleBookingSubmit(event)">
+              <div class="form-row">
+                <div class="input-group">
+                  <label for="book-sender-name">Shipper Name</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="book-sender-name" required placeholder="e.g. Rajesh Sharma">
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label for="book-sender-phone">Contact Number</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-phone"></i>
+                    <input type="tel" id="book-sender-phone" required placeholder="e.g. +91 98765 43210">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="input-group">
+                  <label for="book-origin">Origin City</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <select id="book-origin" required>
+                      <option>Delhi NCR</option>
+                      <option>Mumbai</option>
+                      <option>Bengaluru</option>
+                      <option>Kolkata</option>
+                      <option>Jaipur</option>
+                      <option>Ahmedabad</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label for="book-destination">Destination City</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                    <select id="book-destination" required>
+                      <option>Mumbai</option>
+                      <option>Delhi NCR</option>
+                      <option>Bengaluru</option>
+                      <option>Kolkata</option>
+                      <option>Jaipur</option>
+                      <option>Ahmedabad</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="input-group">
+                  <label for="book-weight">Cargo Weight (Tons)</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-weight-scale"></i>
+                    <input type="number" id="book-weight" min="1" max="50" step="0.1" value="5" required>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label for="book-date">Pick-up Date</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-calendar"></i>
+                    <input type="date" id="book-date" required>
+                  </div>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="book-desc">Cargo Description</label>
+                <div class="input-with-icon">
+                  <i class="fa-solid fa-box"></i>
+                  <textarea id="book-desc" rows="3" placeholder="e.g. 40 bags of rice" required style="padding-left:38px;"></textarea>
+                </div>
+              </div>
+
+              <div class="form-actions-row" style="gap: 12px; flex-wrap: wrap;">
+                <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-booking"><i class="fa-solid fa-paper-plane"></i> Confirm Booking</button>
+                <button type="button" class="btn btn-secondary" onclick="resetInvoice()"><i class="fa-solid fa-rotate-left"></i> Reset Form</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="invoice-display-wrapper">
+            <div class="invoice-outer-card empty" id="invoice-card">
+              <div class="invoice-empty-state" id="invoice-empty-msg">
+                <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>
+                <h3>Your booking summary appears here</h3>
+                <p>Complete the form and submit to generate the dispatch invoice instantly.</p>
+              </div>
+
+              <div class="invoice-actual-content hidden" id="invoice-actual-content">
+                <div class="invoice-header-box">
+                  <div class="invoice-logo"><i class="fa-solid fa-truck-fast"></i> Choudhary Transport</div>
+                  <div class="invoice-meta">
+                    <div><strong>Invoice #</strong> <span id="inv-num"></span></div>
+                    <div><strong>Date</strong> <span id="inv-date"></span></div>
+                  </div>
+                </div>
+                <div class="invoice-party-row">
+                  <div class="party-box">
+                    <span>Shipper</span>
+                    <p id="inv-shipper-name"></p>
+                  </div>
+                  <div class="party-box">
+                    <span>Route</span>
+                    <p id="inv-route-col"></p>
+                  </div>
+                </div>
+
+                <table class="invoice-table">
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th class="text-right">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Shipment Details</td>
+                      <td class="text-right" id="inv-desc-col"></td>
+                    </tr>
+                    <tr>
+                      <td>Weight</td>
+                      <td class="text-right" id="inv-qty-col"></td>
+                    </tr>
+                    <tr>
+                      <td>Estimated Freight</td>
+                      <td class="text-right" id="inv-total-col"></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="invoice-total-summary">
+                  <div class="total-row"><span>Subtotal</span><span id="inv-subtotal"></span></div>
+                  <div class="total-row"><span>CGST</span><span id="inv-cgst"></span></div>
+                  <div class="total-row"><span>SGST</span><span id="inv-sgst"></span></div>
+                  <div class="final-total"><span>Total Payable</span><span id="inv-grandtotal"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer">
+    <div class="footer-top">
+      <div class="grid-container footer-grid">
+        <div class="footer-brand">
+          <div class="logo">
+            <span class="logo-icon"><i class="fa-solid fa-truck-fast"></i></span>
+            <span class="logo-text">CHOUDHARY<span class="accent-text">TRANSPORT</span></span>
+          </div>
+          <p>Book cargo dispatch services across our nationwide logistics network with a fast digital booking flow.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+          </div>
+        </div>
+        <div class="footer-links">
+          <h4>Useful Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/services">Our Services</a></li>
+            <li><a href="/tools">Client Portal</a></li>
+            <li><a href="/booking">Consignment Dispatch</a></li>
+          </ul>
+        </div>
+        <div class="footer-branches">
+          <h4>Core Transit Stations</h4>
+          <ul>
+            <li><i class="fa-solid fa-map-pin"></i> Head Office: Benipatti, Bihar</li>
+            <li><i class="fa-solid fa-map-pin"></i> Delhi NCR</li>
+            <li><i class="fa-solid fa-map-pin"></i> Mumbai</li>
+            <li><i class="fa-solid fa-map-pin"></i> Ahmedabad</li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Customer Care</h4>
+          <p><i class="fa-solid fa-phone"></i> +91 94734 41414</p>
+          <p><i class="fa-solid fa-envelope"></i> choudharytransport@gmail.com</p>
+          <p><i class="fa-solid fa-clock"></i> Mon - Sat: 9:00 AM - 7:00 PM</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-container">
+        <p>Designed and Developed by Encogix Technology Pvt Ltd</p>
+        <div class="footer-legal">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Carriage</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script src="booking.js"></script>
+</body>
+</html>

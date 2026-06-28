@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Choudhary Transport Fleet Overview - Heavy cargo carriers, express transit, and warehouse-enabled transport solutions.">
+  <title>Our Fleet | Choudhary Transport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <header id="site-header">
+    <div class="header-container">
+      <a href="/" class="logo" id="header-logo">
+        <span class="logo-icon"><i class="fa-solid fa-truck-fast"></i></span>
+        <span class="logo-text">CHOUDHARY<span class="accent-text">TRANSPORT</span></span>
+      </a>
+      <nav id="main-nav">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/services" class="nav-link">Services</a>
+        <a href="/fleet" class="nav-link active">Our Fleet</a>
+        <a href="/booking" class="nav-link">Quick Book</a>
+        <a href="/tools" class="nav-link">Client Portal</a>
+        <a href="/login.html" class="nav-link">Admin Portal</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/booking" class="btn btn-primary" id="nav-btn-book">Book Now</a>
+        <button class="mobile-nav-toggle" id="mobile-toggle" aria-label="Toggle Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main style="padding-top: 100px;">
+    <section id="fleet-hero" style="background: linear-gradient(135deg, rgba(5, 85, 255, .92), rgba(16, 185, 129, .95)); color: white; padding: 80px 0;">
+      <div class="grid-container">
+        <div class="section-header" style="color: white; max-width: 900px; margin: 0 auto; text-align: center;">
+          <span class="section-tag" style="color: rgba(255,255,255,.85);">Our Fleet</span>
+          <h1 style="font-size: clamp(2rem, 4vw, 3rem); margin: 18px 0;">Fleet Solutions Built for Reliable Logistics Operations</h1>
+          <p style="font-size: 1rem; color: rgba(245,245,245,0.85);">Heavy carriers, refrigerated haulers, express trailers and digital dispatch control built to keep goods moving on time.</p>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 60px 0; background: var(--bg-secondary);">
+      <div class="grid-container">
+        <div class="fleet-stats-grid">
+          <div class="fleet-details" style="background: var(--bg); padding: 32px; border-radius: var(--radius-lg);">
+            <span class="section-tag">Capabilities</span>
+            <h3>Modern Fleet for Every Cargo Requirement</h3>
+            <p>From high-capacity FTL convoys to refrigerated units and express load carriers, our fleet is sized to support industrial, retail and temperature-sensitive transport.</p>
+            <ul class="fleet-checklist">
+              <li><i class="fa-solid fa-check"></i> 24/7 GPS-enabled monitoring</li>
+              <li><i class="fa-solid fa-check"></i> Heavy-duty multi-axle trailers</li>
+              <li><i class="fa-solid fa-check"></i> Integrated load planning & route optimization</li>
+              <li><i class="fa-solid fa-check"></i> Dedicated warehouse-linked transit hubs</li>
+            </ul>
+            <a href="/booking" class="btn btn-primary" style="margin-top: 24px;">Book a Fleet Dispatch</a>
+          </div>
+          <div class="fleet-image-panel">
+            <div class="fleet-visual-canvas-sub">
+              <img id="fleet-showcase-img" src="assets/fleet-truck.png" alt="Choudhary Transport fleet showcase">
+            </div>
+            <div class="fleet-showcase-controls">
+              <button class="fleet-slide-btn" onclick="prevFleetImage()" aria-label="Previous Fleet Slide"><i class="fa-solid fa-chevron-left"></i></button>
+              <div class="fleet-slide-counter" id="fleet-counter">Heavy Carrier FTL (1 / 3)</div>
+              <button class="fleet-slide-btn" onclick="nextFleetImage()" aria-label="Next Fleet Slide"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 60px 0;">
+      <div class="grid-container">
+        <div class="section-header" style="text-align: center;">
+          <span class="section-tag">Fleet Overview</span>
+          <h2>Fleet Performance & Service Categories</h2>
+          <p>Our transport network combines advanced logistics, driver professionalism and cargo safety systems for consistent delivery outcomes.</p>
+        </div>
+
+        <div class="services-grid" style="margin-top: 40px;">
+          <div class="service-card">
+            <div class="card-icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
+            <h3>Full Truck Load</h3>
+            <p>Optimized heavy-haulage carriers with direct route planning and dedicated dispatch for bulk consignment.</p>
+          </div>
+          <div class="service-card">
+            <div class="card-icon"><i class="fa-solid fa-snowflake"></i></div>
+            <h3>Refrigerated Fleet</h3>
+            <p>Temperature-controlled trailers designed to handle perishables, pharmaceuticals, and cold-chain products.</p>
+          </div>
+          <div class="service-card">
+            <div class="card-icon"><i class="fa-solid fa-bolt"></i></div>
+            <h3>Express Transit</h3>
+            <p>Priority consignments supported by fast lane routing, double-driver shifts, and accelerated loading windows.</p>
+          </div>
+          <div class="service-card">
+            <div class="card-icon"><i class="fa-solid fa-warehouse"></i></div>
+            <h3>Warehouse-Linked Dispatch</h3>
+            <p>Integrated pickup and drop services from our warehousing hubs to ensure faster handoffs and transit coordination.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer">
+    <div class="footer-top">
+      <div class="grid-container footer-grid">
+        <div class="footer-brand">
+          <div class="logo">
+            <span class="logo-icon"><i class="fa-solid fa-truck-fast"></i></span>
+            <span class="logo-text">CHOUDHARY<span class="accent-text">TRANSPORT</span></span>
+          </div>
+          <p>Delivering high-capacity cargo forwarding and customized storage solutions across key industrial zones in India since 2011.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+          </div>
+        </div>
+        <div class="footer-links">
+          <h4>Useful Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/services">Our Services</a></li>
+            <li><a href="/booking">Consignment Dispatch</a></li>
+            <li><a href="/tools">Digital Tracker</a></li>
+          </ul>
+        </div>
+        <div class="footer-branches">
+          <h4>Core Transit Stations</h4>
+          <ul>
+            <li><i class="fa-solid fa-map-pin"></i> Head Office: Benipatti, Bihar</li>
+            <li><i class="fa-solid fa-map-pin"></i> Delhi NCR: Sector 5, Dwarka Cargo Complex</li>
+            <li><i class="fa-solid fa-map-pin"></i> Mumbai: Kalamboli Transport Nagar</li>
+            <li><i class="fa-solid fa-map-pin"></i> Ahmedabad: Aslali Bypass Logistics Zone</li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Customer Care</h4>
+          <p><i class="fa-solid fa-phone"></i> +91 94734 41414</p>
+          <p><i class="fa-solid fa-envelope"></i> choudharytransport@gmail.com</p>
+          <p><i class="fa-solid fa-clock"></i> Mon - Sat: 9:00 AM - 7:00 PM</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-container">
+        <p>Designed and Developed by Encogix Technology Pvt Ltd</p>
+        <div class="footer-legal">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Carriage</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="fleet.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

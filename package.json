@@ -1,0 +1,20 @@
+{
+  "name": "choudhary-transport-portal",
+  "version": "1.0.0",
+  "description": "Logistics and Challan Management portal for Choudhary Transport",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:dbpush": "prisma db push"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "@prisma/client": "^5.15.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.15.0"
+  }
+}

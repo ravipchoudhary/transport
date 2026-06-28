@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Choudhary Transport Live Portal - Live cargo consignment tracker and enterprise freight cost estimator.">
+  <title>Live Portal | Choudhary Transport</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Premium Header -->
+  <header id="site-header">
+    <div class="header-container">
+      <a href="/" class="logo" id="header-logo">
+        <span class="logo-icon"><i class="fa-solid fa-truck-fast"></i></span>
+        <span class="logo-text">CHOUDHARY<span class="accent-text">TRANSPORT</span></span>
+      </a>
+      <nav id="main-nav">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/services" class="nav-link">Services</a>
+        <a href="/fleet" class="nav-link">Our Fleet</a>
+        <a href="/booking" class="nav-link">Quick Book</a>
+        <a href="/tools" class="nav-link active">Client Portal</a>
+        <a href="/login.html" class="nav-link">Admin Portal</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/booking" class="btn btn-primary" id="nav-btn-book">Book Now</a>
+        <button class="mobile-nav-toggle" id="mobile-toggle" aria-label="Toggle Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main style="padding-top: 100px;">
+    <!-- Live Portal Section -->
+    <section id="tools">
+      <div class="grid-container">
+        <div class="section-header animate-slide-up">
+          <span class="section-tag">Digital Hub</span>
+          <h2>Real-Time Logistical Tools</h2>
+          <p>Estimate shipping costs or track your live consignment in seconds.</p>
+        </div>
+        
+        <div class="tools-container animate-slide-up-delay">
+          <!-- Tabs Header -->
+          <div class="tabs-header">
+            <button class="tab-btn active" id="tab-btn-tracker" onclick="switchTab('tracker')">
+              <i class="fa-solid fa-location-crosshairs"></i> Consignment Tracker
+            </button>
+            <button class="tab-btn" id="tab-btn-estimator" onclick="switchTab('estimator')">
+              <i class="fa-solid fa-calculator"></i> Freight Estimator
+            </button>
+          </div>
+
+          <!-- Tab 1: Consignment Tracker Content -->
+          <div class="tab-content active" id="tab-tracker">
+            <div class="tracker-wrapper">
+              <div class="input-inline">
+                <div class="input-group">
+                  <label for="consignment-id">Consignment Number</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-hashtag"></i>
+                    <input type="text" id="consignment-id" placeholder="e.g., CT-9048-IN" value="CT-5281-IN">
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-search" id="btn-track-action" onclick="simulateTracking()">
+                  <i class="fa-solid fa-magnifying-glass"></i> Search Shipment
+                </button>
+              </div>
+
+              <!-- Tracker Results Panel -->
+              <div class="tracker-result hidden" id="tracker-result-panel">
+                <div class="shipment-summary">
+                  <div class="summary-item">
+                    <span class="summary-label">Status</span>
+                    <span class="status-badge pulse-green" id="shipment-status-badge">In Transit</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Origin</span>
+                    <span class="summary-value" id="shipment-origin">Delhi Hub (DEL)</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">Destination</span>
+                    <span class="summary-value" id="shipment-dest">Mumbai Gateway (BOM)</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="summary-label">ETA</span>
+                    <span class="summary-value highlight" id="shipment-eta">Tomorrow, 04:30 PM</span>
+                  </div>
+                </div>
+
+                <!-- Tracking Timeline -->
+                <div class="timeline" id="tracking-timeline">
+                  <!-- Loaded dynamically via tools.js -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Freight Estimator Content -->
+          <div class="tab-content" id="tab-estimator">
+            <div class="estimator-wrapper">
+              <div class="form-grid">
+                <div class="input-group">
+                  <label for="est-origin">Origin City</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-map-pin"></i>
+                    <select id="est-origin" onchange="calculateFreightPrice()">
+                      <option value="del">Delhi NCR</option>
+                      <option value="bom">Mumbai</option>
+                      <option value="blr">Bengaluru</option>
+                      <option value="ccu">Kolkata</option>
+                      <option value="jai">Jaipur</option>
+                      <option value="amd">Ahmedabad</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label for="est-destination">Destination City</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <select id="est-destination" onchange="calculateFreightPrice()">
+                      <option value="bom" selected>Mumbai</option>
+                      <option value="del">Delhi NCR</option>
+                      <option value="blr">Bengaluru</option>
+                      <option value="ccu">Kolkata</option>
+                      <option value="jai">Jaipur</option>
+                      <option value="amd">Ahmedabad</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label for="est-weight">Estimated Weight (Tons)</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-weight-hanging"></i>
+                    <input type="number" id="est-weight" min="1" max="50" value="8" oninput="calculateFreightPrice()">
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label for="est-cargo-type">Freight / Carrier Type</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-truck-front"></i>
+                    <select id="est-cargo-type" onchange="calculateFreightPrice()">
+                      <option value="ftl">Full Truck Load (FTL)</option>
+                      <option value="express">Express Delivery Container</option>
+                      <option value="refrigerated">Refrigerated Fleet</option>
+                      <option value="odc">Over Dimensional Carrier</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price Output Box -->
+              <div class="price-display-card">
+                <div class="price-header">Freight Estimate</div>
+                <div class="price-value" id="price-output">₹ 42,400</div>
+                <div class="price-details">
+                  <span id="price-distance"><i class="fa-solid fa-route"></i> Est. Distance: 1,415 km</span>
+                  <span id="price-duration"><i class="fa-solid fa-clock"></i> Est. Transit: 32 Hours</span>
+                </div>
+                <p class="disclaimer">*Pricing is calculated dynamically based on real-time fuel, distance matrices, and regional tolls. Excludes GST.</p>
+                <button class="btn btn-primary btn-block btn-lg" onclick="selectEstimateForBooking()">Book at this Rate</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer id="site-footer">
+    <div class="footer-top">
+      <div class="grid-container footer-grid">
+        <div class="footer-brand">
+          <div class="logo">
+            <span class="logo-icon"><i class="fa-solid fa-truck-fast"></i></span>
+            <span class="logo-text">CHOUDHARY<span class="accent-text">TRANSPORT</span></span>
+          </div>
+          <p>Delivering high-capacity cargo forwarding and customized storage solutions across key industrial zones in India since 2011.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+          </div>
+        </div>
+        <div class="footer-links">
+          <h4>Useful Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/services">Our Services</a></li>
+            <li><a href="/tools">Digital Tracker</a></li>
+            <li><a href="/booking">Consignment Dispatch</a></li>
+          </ul>
+        </div>
+        <div class="footer-branches">
+          <h4>Core Transit Stations</h4>
+          <ul>
+            <li><i class="fa-solid fa-map-pin"></i> Jaipur (HQ): Road 12, VKI Area</li>
+            <li><i class="fa-solid fa-map-pin"></i> Delhi NCR: Sector 5, Dwarka Cargo Complex</li>
+            <li><i class="fa-solid fa-map-pin"></i> Mumbai: Kalamboli Transport Nagar</li>
+            <li><i class="fa-solid fa-map-pin"></i> Ahmedabad: Aslali Bypass Logistics Zone</li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Customer Care</h4>
+          <p><i class="fa-solid fa-phone"></i> +91 141 234 5678</p>
+          <p><i class="fa-solid fa-envelope"></i> contact@choudharytransport.com</p>
+          <p><i class="fa-solid fa-clock"></i> Mon - Sat: 9:00 AM - 7:00 PM</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-bottom-container">
+        <p>Designed and Developed by Encogix Technology Pvt Ltd</p>
+        <div class="footer-legal">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Carriage</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script src="tools.js"></script>
+</body>
+</html>
