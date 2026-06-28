@@ -18,8 +18,10 @@ const asyncHandler = (fn) => (req, res, next) => {
 // Middleware for parsing JSON requests
 app.use(express.json());
 
-// Serve all static files from the current folder
-app.use(express.static(__dirname));
+// Serve static files only when running locally as a standalone server.
+if (require.main === module) {
+  app.use(express.static(__dirname));
+}
 
 // --- JWT Verification Middleware ---
 function authenticateToken(req, res, next) {
@@ -378,7 +380,12 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start listening
-app.listen(PORT, () => {
-  console.log(`Choudhary Transport Server running on http://127.0.0.1:${PORT}`);
-});
+// Start listening only when run directly, not when imported by a serverless wrapper.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Choudhary Transport Server running on http://127.0.0.1:${PORT}`);
+  });
+}
+
+module.exports = app;
+
