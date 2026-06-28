@@ -1,15 +1,147 @@
 import Link from 'next/link';
 import Head from 'next/head';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'challan' | 'vehicle' | 'driver-profile' | 'driver' | 'mechanic' | 'diesel'>('challan');
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [qrScannerError, setQrScannerError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const barcodeDetectorRef = useRef<any>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const switchTab = (tab: 'challan' | 'vehicle' | 'driver-profile' | 'driver' | 'mechanic' | 'diesel') => {
     setActiveTab(tab);
     setSidebarOpen(false);
   };
+
+  const closeQrScanner = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setQrScannerOpen(false);
+    setQrScannerError(null);
+  };
+
+  const scanFrame = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.readyState < 2) {
+      animationFrameRef.current = requestAnimationFrame(scanFrame);
+      return;
+    }
+
+    const canvas = canvasRef.current || document.createElement('canvas');
+    canvasRef.current = canvas;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const BarcodeDetectorClass = (window as any).BarcodeDetector;
+    if (!BarcodeDetectorClass) {
+      setQrScannerError('QR scanning is not supported in this browser. Please paste the QR code manually.');
+      return;
+    }
+
+    try {
+      if (!barcodeDetectorRef.current) {
+        barcodeDetectorRef.current = new BarcodeDetectorClass({ formats: ['qr_code'] });
+      }
+      const barcodes = await barcodeDetectorRef.current.detect(video);
+      if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+        const qrValue = barcodes[0].rawValue.trim();
+        const qrcodeInput = document.getElementById('form-qrcode-input') as HTMLInputElement | null;
+        if (qrcodeInput) qrcodeInput.value = qrValue;
+
+        try {
+          const parsed = JSON.parse(qrValue);
+
+          const challanNoInput = document.getElementById('form-challan-no') as HTMLInputElement | null;
+          const dealerNameInput = document.getElementById('form-dealer-name') as HTMLInputElement | null;
+          const vehicleInput = document.getElementById('form-challan-vehicle') as HTMLInputElement | null;
+          const driverInput = document.getElementById('form-challan-driver') as HTMLInputElement | null;
+          const dateInput = document.getElementById('form-challan-date') as HTMLInputElement | null;
+          const riceBagsInput = document.getElementById('form-rice-bags') as HTMLInputElement | null;
+          const wheatBagsInput = document.getElementById('form-wheat-bags') as HTMLInputElement | null;
+
+          if (parsed.challanNo && challanNoInput) challanNoInput.value = parsed.challanNo;
+          if (parsed.dealerName && dealerNameInput) dealerNameInput.value = parsed.dealerName;
+          if (parsed.vehicleNumber && vehicleInput) vehicleInput.value = parsed.vehicleNumber;
+          if (parsed.driverName && driverInput) driverInput.value = parsed.driverName;
+          if (parsed.date && dateInput) dateInput.value = parsed.date;
+          if (parsed.riceBags !== undefined && riceBagsInput) riceBagsInput.value = String(parsed.riceBags);
+          if (parsed.wheatBags !== undefined && wheatBagsInput) wheatBagsInput.value = String(parsed.wheatBags);
+        } catch (parseError) {
+          // If QR data is not JSON, just fill the raw value into the QR field.
+        }
+
+        closeQrScanner();
+        return;
+      }
+    } catch (scanError) {
+      console.error('QR scan error:', scanError);
+      setQrScannerError('Unable to read QR code. Please try again or paste the QR code manually.');
+      return;
+    }
+
+    animationFrameRef.current = requestAnimationFrame(scanFrame);
+  };
+
+  const openQrScanner = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setQrScannerError('Camera access is unavailable in this browser. Please use a supported browser.');
+      return;
+    }
+
+    setQrScannerError(null);
+    setQrScannerOpen(true);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      streamRef.current = stream;
+    } catch (err) {
+      console.error('QR camera error:', err);
+      setQrScannerError('Unable to access the camera. Please allow camera access in your browser settings.');
+      setQrScannerOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (qrScannerOpen && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current
+        .play()
+        .then(() => {
+          scanFrame();
+        })
+        .catch((err) => {
+          console.error('QR video play error:', err);
+          setQrScannerError('Unable to start the camera preview. Please refresh or try another browser.');
+        });
+    }
+
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop());
+    };
+  }, [qrScannerOpen]);
 
   const renderHeaderTitle = () => {
     switch (activeTab) {
@@ -275,7 +407,7 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="form-actions-row">
-                        <button type="button" className="btn btn-secondary" onClick={() => {}}>
+                        <button type="button" className="btn btn-secondary" onClick={openQrScanner}>
                           <i className="fa-solid fa-camera" /> Scan QR Code
                         </button>
                         <button type="submit" className="btn btn-primary" id="btn-form-submit">
@@ -629,14 +761,516 @@ export default function DashboardPage() {
               </div>
             </section>
             <section className={activeTab === 'mechanic' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
-              <h3>Mechanic Logs</h3>
-              <p>Record workshop maintenance entries and service logs for vehicles.</p>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Services Logged</span>
+                      <h3 id="stat-mechanic-invoices-count">0</h3>
+                    </div>
+                    <div className="card-icon blue-bg"><i className="fa-solid fa-file-lines" /></div>
+                  </div>
+                  <div className="card-footer-desc">Cumulative Records</div>
+                </div>
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Expense (This Month)</span>
+                      <h3 id="stat-mechanic-cost-this-month">₹ 0</h3>
+                    </div>
+                    <div className="card-icon green-bg"><i className="fa-solid fa-screwdriver-wrench" /></div>
+                  </div>
+                  <div className="card-footer-desc">Workshop Maintenance</div>
+                </div>
+              </div>
+
+              <div className="workspace-grid">
+                <div className="workspace-table-panel">
+                  <div className="panel-header">
+                    <h3>Live Fleet Maintenance Database</h3>
+                    <div className="filter-row">
+                      <div className="search-box">
+                        <i className="fa-solid fa-magnifying-glass" />
+                        <input type="text" id="mechanic-search" placeholder="Search Mechanic / Vehicle..." />
+                      </div>
+                      <div className="month-filter">
+                        <select id="mechanic-month-filter" defaultValue="all">
+                          <option value="all">All Months</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="mechanic-table-loader" className="table-spinner">
+                    <i className="fa-solid fa-circle-notch fa-spin" /> Retrieving Records...
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="dash-table" id="mechanic-data-table">
+                      <thead>
+                        <tr>
+                          <th>Mechanic Name</th>
+                          <th>Vehicle Number</th>
+                          <th>Work Description</th>
+                          <th>Parts Used</th>
+                          <th className="text-right">Amount Paid</th>
+                          <th>Date</th>
+                          <th>Paid By</th>
+                          <th>Remarks</th>
+                          <th className="text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="mechanic-table-rows"></tbody>
+                    </table>
+                  </div>
+
+                  <div className="table-empty-state hidden" id="mechanic-table-empty">
+                    <i className="fa-solid fa-wrench" />
+                    <p>No mechanic expense records found matching your filters.</p>
+                  </div>
+                </div>
+
+                <div className="workspace-form-panel">
+                  <div className="form-card">
+                    <h3 id="mechanic-form-panel-title"><i className="fa-solid fa-screwdriver-wrench" /> Add Workshop Record</h3>
+                    <p className="form-panel-subtitle">Create maintenance log for vehicles. Date defaults to today.</p>
+                    <div className="form-feedback-toast hidden" id="mechanic-form-toast"></div>
+
+                    <form id="mechanic-entry-form" onSubmit={(e) => e.preventDefault()}>
+                      <input type="hidden" id="form-mechanic-id" value="" />
+                      <div className="input-group">
+                        <label htmlFor="form-mechanic-name">Mechanic Name</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-user-gear" />
+                          <input type="text" id="form-mechanic-name" required placeholder="e.g. Jaipur Garage Association" />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="input-group">
+                          <label htmlFor="form-mechanic-vehicle">Vehicle Number</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-truck" />
+                            <input type="text" id="form-mechanic-vehicle" required placeholder="e.g. RJ-14-GD-8921" />
+                          </div>
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="form-mechanic-amount">Amount Paid</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-indian-rupee-sign" />
+                            <input type="number" id="form-mechanic-amount" required placeholder="e.g. 7500" min={1} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="input-group">
+                          <label htmlFor="form-mechanic-date">Service Date</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-calendar" />
+                            <input type="date" id="form-mechanic-date" required />
+                          </div>
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="form-mechanic-paidby">Paid By</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-user-check" />
+                            <input type="text" id="form-mechanic-paidby" required placeholder="e.g. Choudhary Admin" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-mechanic-work">Work Description</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-hammer" />
+                          <input type="text" id="form-mechanic-work" required placeholder="e.g. Gearbox tuning and alignment" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-mechanic-parts">Parts Used</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-gears" />
+                          <input type="text" id="form-mechanic-parts" placeholder="e.g. Spindle gears, gasket seal" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-mechanic-remarks">Remarks</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-comment-dots" />
+                          <input type="text" id="form-mechanic-remarks" placeholder="e.g. Routine 50K maintenance" />
+                        </div>
+                      </div>
+
+                      <div className="form-actions-row">
+                        <button type="submit" className="btn btn-primary" id="btn-mechanic-form-submit">
+                          <i className="fa-solid fa-circle-check" /> Save Record
+                        </button>
+                        <button type="button" className="btn btn-secondary" id="btn-mechanic-form-cancel" onClick={() => {}}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div className="report-section-panel">
+                <div className="panel-header">
+                  <h3><i className="fa-solid fa-chart-pie" /> Monthly Maintenance Expense Reports</h3>
+                  <p>Filter logs and compile totals paid for mechanic repairs during selected duration.</p>
+                </div>
+
+                <div className="report-filter-bar">
+                  <div className="r-filters">
+                    <div className="input-group-inline">
+                      <label htmlFor="mechanic-report-month">Select Month</label>
+                      <select id="mechanic-report-month" defaultValue="06">
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                      </select>
+                    </div>
+                    <div className="input-group-inline">
+                      <label htmlFor="mechanic-report-year">Select Year</label>
+                      <select id="mechanic-report-year" defaultValue="2026">
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                      </select>
+                    </div>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => {}}>
+                      <i className="fa-solid fa-arrows-rotate" /> Compile Ledger
+                    </button>
+                  </div>
+
+                  <div className="r-actions">
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => {}}>
+                      <i className="fa-solid fa-file-csv" /> Export to CSV
+                    </button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
+                      <i className="fa-solid fa-print" /> Print Report
+                    </button>
+                  </div>
+                </div>
+
+                <div className="report-results-grid hidden" id="mechanic-report-results-container">
+                  <div className="report-summary-stats">
+                    <div className="r-stat">
+                      <span className="r-label">Compiled Month</span>
+                      <span className="r-val" id="mechanic-rep-display-month">June 2026</span>
+                    </div>
+                    <div className="r-stat">
+                      <span className="r-label">Total Expense</span>
+                      <span className="r-val green-text" id="mechanic-rep-total-amount">₹ 0</span>
+                    </div>
+                    <div className="r-stat">
+                      <span className="r-label">Services Logged</span>
+                      <span className="r-val" id="mechanic-rep-total-tasks">0</span>
+                    </div>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="dash-table min-table">
+                      <thead>
+                        <tr>
+                          <th>Mechanic Name</th>
+                          <th>Vehicle Number</th>
+                          <th>Work Description</th>
+                          <th>Parts Used</th>
+                          <th className="text-right">Amount Paid</th>
+                          <th>Date</th>
+                          <th>Paid By</th>
+                        </tr>
+                      </thead>
+                      <tbody id="mechanic-report-table-rows"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="report-empty-state" id="mechanic-report-empty-container">
+                  <i className="fa-solid fa-calculator" />
+                  <p>Select Month and Year above and click "Compile Ledger" to review workshop expenses.</p>
+                </div>
+              </div>
             </section>
             <section className={activeTab === 'diesel' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
-              <h3>Diesel Tracker</h3>
-              <p>Track fuel purchases, litre usage, and diesel expenses here.</p>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Total Liters (This Month)</span>
+                      <h3 id="stat-diesel-liters-this-month">0 L</h3>
+                    </div>
+                    <div className="card-icon blue-bg"><i className="fa-solid fa-droplet" /></div>
+                  </div>
+                  <div className="card-footer-desc">Volume Given to Fleet</div>
+                </div>
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Diesel Cost (This Month)</span>
+                      <h3 id="stat-diesel-cost-this-month">₹ 0</h3>
+                    </div>
+                    <div className="card-icon green-bg"><i className="fa-solid fa-indian-rupee-sign" /></div>
+                  </div>
+                  <div className="card-footer-desc">Fuel Cost Expenditures</div>
+                </div>
+              </div>
+
+              <div className="workspace-grid">
+                <div className="workspace-table-panel">
+                  <div className="panel-header">
+                    <h3>Live Diesel Tracker Database</h3>
+                    <div className="filter-row">
+                      <div className="search-box">
+                        <i className="fa-solid fa-magnifying-glass" />
+                        <input type="text" id="diesel-search" placeholder="Search Driver / Vehicle..." onInput={() => {}} />
+                      </div>
+                      <div className="month-filter">
+                        <select id="diesel-month-filter" onChange={() => {}} defaultValue="all">
+                          <option value="all">All Months</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="diesel-table-loader" className="table-spinner">
+                    <i className="fa-solid fa-circle-notch fa-spin" /> Retrieving Records...
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="dash-table" id="diesel-data-table">
+                      <thead>
+                        <tr>
+                          <th>Driver Name</th>
+                          <th>Vehicle Number</th>
+                          <th className="text-right">Quantity (L)</th>
+                          <th className="text-right">Rate / L</th>
+                          <th className="text-right">Total Amount</th>
+                          <th>Date</th>
+                          <th>Given By</th>
+                          <th>Remarks</th>
+                          <th className="text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="diesel-table-rows"></tbody>
+                    </table>
+                  </div>
+
+                  <div className="table-empty-state hidden" id="diesel-table-empty">
+                    <i className="fa-solid fa-gas-pump" />
+                    <p>No diesel log records found matching your filters.</p>
+                  </div>
+                </div>
+
+                <div className="workspace-form-panel">
+                  <div className="form-card">
+                    <h3 id="diesel-form-panel-title"><i className="fa-solid fa-gas-pump" /> Add Diesel Log</h3>
+                    <p className="form-panel-subtitle">Record fuel billing. Total diesel amount is calculated automatically.</p>
+                    <div className="form-feedback-toast hidden" id="diesel-form-toast" />
+
+                    <form id="diesel-entry-form" onSubmit={(e) => e.preventDefault()}>
+                      <input type="hidden" id="form-diesel-id" value="" />
+                      <div className="input-group">
+                        <label htmlFor="form-diesel-driver">Driver Name</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-user" />
+                          <input type="text" id="form-diesel-driver" required placeholder="e.g. Ram Singh Choudhary" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-diesel-vehicle">Vehicle Number</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-truck" />
+                          <input type="text" id="form-diesel-vehicle" required placeholder="e.g. RJ-14-GD-8921" />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="input-group">
+                          <label htmlFor="form-diesel-quantity">Diesel Quantity (Liters)</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-droplet" />
+                            <input type="number" id="form-diesel-quantity" required placeholder="e.g. 150" min="1" step="0.01" onInput={() => {}} />
+                          </div>
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="form-diesel-rate">Diesel Rate (per Liter)</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-tag" />
+                            <input type="number" id="form-diesel-rate" required placeholder="e.g. 90" min="1" step="0.01" onInput={() => {}} />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="form-row calculations-highlight">
+                        <div className="calc-box">
+                          <span className="calc-label">Total Diesel Amount</span>
+                          <span className="calc-val accent-val" id="form-diesel-amount-display">₹ 0</span>
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="input-group">
+                          <label htmlFor="form-diesel-date">Filling Date</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-calendar" />
+                            <input type="date" id="form-diesel-date" required />
+                          </div>
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="form-diesel-givenby">Given By</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-user-check" />
+                            <input type="text" id="form-diesel-givenby" required placeholder="e.g. Choudhary Admin" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-diesel-remarks">Remarks</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-comment-dots" />
+                          <input type="text" id="form-diesel-remarks" placeholder="e.g. Tank refill VKI Station" />
+                        </div>
+                      </div>
+
+                      <div className="form-actions-row">
+                        <button type="submit" className="btn btn-primary" id="btn-diesel-form-submit">
+                          <i className="fa-solid fa-circle-check" /> Save Record
+                        </button>
+                        <button type="button" className="btn btn-secondary" id="btn-diesel-form-cancel" onClick={() => {}}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div className="report-section-panel">
+                <div className="panel-header">
+                  <h3><i className="fa-solid fa-chart-pie" /> Monthly Driver-wise Diesel Ledger Reports</h3>
+                  <p>Filter fuel logs and review driver-wise consumption totals during selected month.</p>
+                </div>
+
+                <div className="report-filter-bar">
+                  <div className="r-filters">
+                    <div className="input-group-inline">
+                      <label htmlFor="diesel-report-month">Select Month</label>
+                      <select id="diesel-report-month" defaultValue="06">
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                      </select>
+                    </div>
+                    <div className="input-group-inline">
+                      <label htmlFor="diesel-report-year">Select Year</label>
+                      <select id="diesel-report-year" defaultValue="2026">
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                      </select>
+                    </div>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => {}}>
+                      <i className="fa-solid fa-arrows-rotate" /> Compile Ledger
+                    </button>
+                  </div>
+
+                  <div className="r-actions">
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => {}}>
+                      <i className="fa-solid fa-file-csv" /> Export to CSV
+                    </button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
+                      <i className="fa-solid fa-print" /> Print Report
+                    </button>
+                  </div>
+                </div>
+
+                <div className="report-results-grid hidden" id="diesel-report-results-container">
+                  <div className="report-summary-stats">
+                    <div className="r-stat">
+                      <span className="r-label">Compiled Month</span>
+                      <span className="r-val" id="diesel-rep-display-month">June 2026</span>
+                    </div>
+                    <div className="r-stat">
+                      <span className="r-label">Total Liters Filled</span>
+                      <span className="r-val text-white" id="diesel-rep-total-liters">0 L</span>
+                    </div>
+                    <div className="r-stat">
+                      <span className="r-label">Grand Total Cost</span>
+                      <span className="r-val green-text" id="diesel-rep-total-amount">₹ 0</span>
+                    </div>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="dash-table min-table">
+                      <thead>
+                        <tr>
+                          <th>Driver Name</th>
+                          <th className="text-right">Total Liters</th>
+                          <th className="text-right">Average Rate</th>
+                          <th className="text-right">Total Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody id="diesel-report-table-rows"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="report-empty-state" id="diesel-report-empty-container">
+                  <i className="fa-solid fa-calculator" />
+                  <p>Select Month and Year above and click "Compile Ledger" to review diesel reports.</p>
+                </div>
+              </div>
             </section>
           </main>
+          {qrScannerOpen && (
+            <div className="modal-overlay active">
+              <div className="modal-card">
+                <div className="modal-header">
+                  <h3><i className="fa-solid fa-qrcode" /> Scan Challan QR</h3>
+                  <button type="button" className="modal-close" onClick={closeQrScanner}>&times;</button>
+                </div>
+                <div className="modal-body">
+                  {qrScannerError ? (
+                    <div className="scanner-error">{qrScannerError}</div>
+                  ) : (
+                    <video ref={videoRef} className="scanner-video" autoPlay muted playsInline />
+                  )}
+                  <div className="scanner-actions">
+                    <button type="button" className="btn btn-secondary" onClick={closeQrScanner}>
+                      <i className="fa-solid fa-stop" /> Stop Camera
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={closeQrScanner}>
+                      <i className="fa-solid fa-xmark" /> Cancel
+                    </button>
+                  </div>
+                  <p className="scanner-help">Point your phone camera at the QR code. The scanned text will populate the challan details automatically.</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
