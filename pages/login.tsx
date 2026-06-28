@@ -15,24 +15,33 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-      const trimmedUsername = username.trim();
-      const trimmedPassword = password.trim();
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
 
-      if (!trimmedUsername || !trimmedPassword) {
-        setError('Email/mobile and password are required.');
-        setLoading(false);
-        return;
-      }
+    if (!trimmedUsername || !trimmedPassword) {
+      setError('Email/mobile and password are required.');
+      setLoading(false);
+      return;
+    }
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Login payload:', { emailOrMobile: trimmedUsername, password: trimmedPassword });
-      }
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Login payload:', { emailOrMobile: trimmedUsername, password: trimmedPassword });
+    }
 
-      try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emailOrMobile: trimmedUsername, password: trimmedPassword })
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emailOrMobile: trimmedUsername,
+          password: trimmedPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Login failed. Please check your credentials.');
       }
 
       if (data.token) {
