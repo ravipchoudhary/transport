@@ -536,9 +536,12 @@ async function seedDatabase() {
   });
 }
 
-seedDatabase().catch(err => {
-  console.error('Prisma seed failed:', err);
-});
+// Only run the seed when this module is executed directly (local/dev).
+if (require.main === module) {
+  seedDatabase().catch(err => {
+    console.error('Prisma seed failed:', err);
+  });
+}
 
 module.exports = {
   registerUser,
