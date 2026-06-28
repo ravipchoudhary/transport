@@ -4,19 +4,26 @@
   "description": "Logistics and Challan Management portal for Choudhary Transport",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "npm run prisma:generate",
-    "vercel-build": "npm run prisma:generate",
+    "dev": "next dev -p 3000",
+    "start": "next start -p 3000",
+    "build": "next build",
+    "vercel-build": "next build",
     "prisma:generate": "node ./node_modules/prisma/build/index.js generate",
     "prisma:dbpush": "prisma db push"
   },
   "dependencies": {
+    "@prisma/client": "^5.15.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
-    "@prisma/client": "^5.15.0"
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "prisma": "^5.15.0"
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "prisma": "^5.15.0",
+    "typescript": "^5.5.0"
   }
 }
