@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,15 +14,24 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    let data: any = null;
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email: normalizedEmail, password })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
-      if (data.token) {
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+      if (!res.ok) {
+        throw new Error((data && data.error) || 'Login failed');
+      }
+      if (data?.token) {
         localStorage.setItem('authToken', data.token);
       }
       router.push('/dashboard');
@@ -66,7 +75,7 @@ export default function LoginPage() {
                   <label htmlFor="email">Email Address / Mobile Number</label>
                   <div className="input-with-icon">
                     <i className="fa-solid fa-envelope" />
-                    <input id="email" type="text" placeholder="admin@choudhary.com" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                    <input id="email" type="text" placeholder="admin@choudhary.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                 </div>
                 <div className="input-group">

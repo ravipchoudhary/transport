@@ -27,10 +27,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(503).json({ error: 'Database unavailable. Please try again later.' });
     }
 
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Username and password are required.' });
+    const { email, username, password } = req.body;
+    const loginId = email?.trim().toLowerCase() || username?.trim();
+    if (!loginId || !password) return res.status(400).json({ error: 'Email/username and password are required.' });
 
-    const result = await loginUser(username, password);
+    const result = await loginUser(loginId, password);
     if (!result.success || !result.user) return res.status(401).json({ error: result.message || 'Login failed.' });
 
     const token = jwt.sign({ id: result.user.id, email: result.user.email, role: result.user.role }, SECRET, { expiresIn: '24h' });
