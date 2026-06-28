@@ -18,7 +18,7 @@ export default function LoginPage() {
             <h2>Welcome Back</h2>
             <p>Secure Administrator & Dispatcher Portal</p>
           </div>
-          <form onSubmit={(e) => e.preventDefault()}>
+          <form>
             <div className="input-group">
               <label htmlFor="email">Email Address / Mobile Number</label>
               <div className="input-with-icon">

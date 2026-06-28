@@ -17,7 +17,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { id } = req.query as { id: string };
   if (req.method === 'PUT') {
     const { vehicleNumber, vehicleType, ownerName, rcDocument, roadTaxExpiry, insuranceExpiry, pucExpiry, fitnessExpiry, permitExpiry, remarks } = req.body;
-    if (!vehicleNumber || !vehicleType || !ownerName) return res.status(400).json({ error: 'Missing required fields.' });
     const result = await updateVehicle(user.id, id, vehicleNumber, vehicleType, ownerName, rcDocument, roadTaxExpiry, insuranceExpiry, pucExpiry, fitnessExpiry, permitExpiry, remarks);
     if (!result.success) return res.status(404).json({ error: result.message });
     return res.status(200).json(result.vehicle);

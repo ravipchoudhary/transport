@@ -17,10 +17,10 @@ export default function DashboardPage() {
             </Link>
           </div>
           <nav className="sidebar-menu">
-            <Link href="/dashboard" className="menu-item active"><i className="fa-solid fa-file-invoice" /> Challan Module</Link>
-            <Link href="/dashboard" className="menu-item"><i className="fa-solid fa-truck" /> Vehicle Profiles</Link>
-            <Link href="/dashboard" className="menu-item"><i className="fa-solid fa-id-card-clip" /> Driver Profiles</Link>
-            <Link href="/dashboard" className="menu-item"><i className="fa-solid fa-screwdriver-wrench" /> Mechanic Logs</Link>
+            <a href="#" className="menu-item active"><i className="fa-solid fa-file-invoice" /> Challan Module</a>
+            <a href="#" className="menu-item"><i className="fa-solid fa-truck" /> Vehicle Profiles</a>
+            <a href="#" className="menu-item"><i className="fa-solid fa-id-card-clip" /> Driver Profiles</a>
+            <a href="#" className="menu-item"><i className="fa-solid fa-screwdriver-wrench" /> Mechanic Logs</a>
           </nav>
         </aside>
         <div className="dash-content-area">

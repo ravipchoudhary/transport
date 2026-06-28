@@ -14,31 +14,31 @@ export default function Booking() {
             <div className="tracker-wrapper">
               <div className="form-grid">
                 <div className="input-group">
-                  <label htmlFor="booking-customer-name">Customer Name</label>
+                  <label>Customer Name</label>
                   <div className="input-with-icon">
                     <i className="fa-solid fa-user" />
-                    <input id="booking-customer-name" type="text" placeholder="Enter customer name" />
+                    <input type="text" placeholder="Enter customer name" />
                   </div>
                 </div>
                 <div className="input-group">
-                  <label htmlFor="booking-mobile">Mobile Number</label>
+                  <label>Mobile Number</label>
                   <div className="input-with-icon">
                     <i className="fa-solid fa-phone" />
-                    <input id="booking-mobile" type="tel" placeholder="9876543210" />
+                    <input type="tel" placeholder="9876543210" />
                   </div>
                 </div>
                 <div className="input-group">
-                  <label htmlFor="booking-origin">Origin City</label>
+                  <label>Origin City</label>
                   <div className="input-with-icon">
                     <i className="fa-solid fa-map-pin" />
-                    <input id="booking-origin" type="text" placeholder="Delhi" />
+                    <input type="text" placeholder="Delhi" />
                   </div>
                 </div>
                 <div className="input-group">
-                  <label htmlFor="booking-destination">Destination City</label>
+                  <label>Destination City</label>
                   <div className="input-with-icon">
                     <i className="fa-solid fa-location-dot" />
-                    <input id="booking-destination" type="text" placeholder="Mumbai" />
+                    <input type="text" placeholder="Mumbai" />
                   </div>
                 </div>
               </div>

@@ -1,9 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getDieselEntries, addDieselEntry } from '../../../lib/database';
-import { getAuthenticatedUser } from '../../../lib/auth';
+import jwt from 'jsonwebtoken';
+
+const SECRET = process.env.JWT_SECRET || 'choudhary-transport-secret-2026';
+
+function authUser(req: NextApiRequest) {
+  const authHeader = req.headers.authorization as string | undefined;
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return null;
+  try { return jwt.verify(token, SECRET) as any; } catch { return null; }
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const user = getAuthenticatedUser(req);
+  const user = authUser(req);
   if (!user) return res.status(401).json({ error: 'Access denied. Authentication token missing or invalid.' });
 
   if (req.method === 'GET') {

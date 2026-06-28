@@ -6,9 +6,9 @@ function hashPassword(password: string) {
 }
 
 function normalizeDate(dateString?: string | null) {
-  if (!dateString) return undefined;
+  if (!dateString) return new Date();
   const parsed = new Date(dateString);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 export async function registerUser(fullName: string, mobile: string, email: string, password: string, role?: string) {
@@ -39,7 +39,7 @@ export async function addChallan(userId: string, challanNo: string, dealerName: 
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : '';
 
-  const challan = await prisma.challan.create({ data: { challanNo, dealerName, date: dateObj, riceBags: rice, wheatBags: wheat, totalBags, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || '', driverName: driverName || '', scannedData: scannedData || null, user: { connect: { id: userId } } } });
+  const challan = await prisma.challan.create({ data: { challanNo, dealerName, date: dateObj ?? new Date(), riceBags: rice, wheatBags: wheat, totalBags, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || '', driverName: driverName || '', scannedData: scannedData || null, user: { connect: { id: userId } } } });
   return { success: true, challan };
 }
 
@@ -54,7 +54,7 @@ export async function updateChallan(userId: string, challanId: string, challanNo
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : existing.month;
 
-  const challan = await prisma.challan.update({ where: { id: challanId }, data: { challanNo, dealerName, date: dateObj, riceBags: rice, wheatBags: wheat, totalBags, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || '', driverName: driverName || '', scannedData: scannedData || existing.scannedData } });
+  const challan = await prisma.challan.update({ where: { id: challanId }, data: { challanNo, dealerName, date: dateObj ?? existing.date, riceBags: rice, wheatBags: wheat, totalBags, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || '', driverName: driverName || '', scannedData: scannedData || existing.scannedData } });
   return { success: true, challan };
 }
 
@@ -76,7 +76,7 @@ export async function addDieselEntry(userId: string, driverName: string, vehicle
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : '';
 
-  const entry = await prisma.diesel.create({ data: { driverName, vehicleNumber, quantity: qty, rate: rt, amount, date: dateObj, givenBy, remarks: remarks || null, month, user: { connect: { id: userId } } } });
+  const entry = await prisma.diesel.create({ data: { driverName, vehicleNumber, quantity: qty, rate: rt, amount, date: dateObj ?? new Date(), givenBy, remarks: remarks || null, month, user: { connect: { id: userId } } } });
   return { success: true, entry };
 }
 
@@ -89,7 +89,7 @@ export async function updateDieselEntry(userId: string, entryId: string, driverN
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : existing.month;
 
-  const entry = await prisma.diesel.update({ where: { id: entryId }, data: { driverName, vehicleNumber, quantity: qty, rate: rt, amount, date: dateObj, givenBy, remarks: remarks || null, month } });
+  const entry = await prisma.diesel.update({ where: { id: entryId }, data: { driverName, vehicleNumber, quantity: qty, rate: rt, amount, date: dateObj ?? existing.date, givenBy, remarks: remarks || null, month } });
   return { success: true, entry };
 }
 
@@ -109,7 +109,7 @@ export async function addMechanicExpense(userId: string, mechanicName: string, v
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : '';
 
-  const expense = await prisma.mechanic.create({ data: { mechanicName, vehicleNumber, workDescription, partsUsed: partsUsed || null, amountPaid: paid, date: dateObj, paidBy, remarks: remarks || null, month, user: { connect: { id: userId } } } });
+  const expense = await prisma.mechanic.create({ data: { mechanicName, vehicleNumber, workDescription, partsUsed: partsUsed || null, amountPaid: paid, date: dateObj ?? new Date(), paidBy, remarks: remarks || null, month, user: { connect: { id: userId } } } });
   return { success: true, expense };
 }
 
@@ -120,7 +120,7 @@ export async function updateMechanicExpense(userId: string, expenseId: string, m
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : existing.month;
 
-  const expense = await prisma.mechanic.update({ where: { id: expenseId }, data: { mechanicName, vehicleNumber, workDescription, partsUsed: partsUsed || null, amountPaid: paid, date: dateObj, paidBy, remarks: remarks || null, month } });
+  const expense = await prisma.mechanic.update({ where: { id: expenseId }, data: { mechanicName, vehicleNumber, workDescription, partsUsed: partsUsed || null, amountPaid: paid, date: dateObj ?? existing.date, paidBy, remarks: remarks || null, month } });
   return { success: true, expense };
 }
 
@@ -140,7 +140,7 @@ export async function addDriverRecord(userId: string, driverName: string, mobile
   const dateObj = normalizeDate(paymentDate);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : '';
 
-  const record = await prisma.driver.create({ data: { driverName, mobileNumber, vehicleNumber, amountGiven: given, paymentDate: dateObj, paymentType, remarks: remarks || null, month, user: { connect: { id: userId } } } });
+  const record = await prisma.driver.create({ data: { driverName, mobileNumber, vehicleNumber, amountGiven: given, paymentDate: dateObj ?? new Date(), paymentType, remarks: remarks || null, month, user: { connect: { id: userId } } } });
   return { success: true, record };
 }
 
@@ -151,7 +151,7 @@ export async function updateDriverRecord(userId: string, recordId: string, drive
   const dateObj = normalizeDate(paymentDate);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : existing.month;
 
-  const record = await prisma.driver.update({ where: { id: recordId }, data: { driverName, mobileNumber, vehicleNumber, amountGiven: given, paymentDate: dateObj, paymentType, remarks: remarks || null, month } });
+  const record = await prisma.driver.update({ where: { id: recordId }, data: { driverName, mobileNumber, vehicleNumber, amountGiven: given, paymentDate: dateObj ?? existing.paymentDate, paymentType, remarks: remarks || null, month } });
   return { success: true, record };
 }
 

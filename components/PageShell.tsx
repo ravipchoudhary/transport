@@ -16,6 +16,10 @@ export default function PageShell({ title, description, children, mainClassName 
         <title>{title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content={description || 'Choudhary Transport portal'} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Head>
 
       <header id="site-header">
@@ -50,9 +54,9 @@ export default function PageShell({ title, description, children, mainClassName 
               </div>
               <p>Delivering high-capacity cargo forwarding and customized storage solutions across key industrial zones in India since 2011.</p>
               <div className="social-links">
-                <a href="https://www.facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><i className="fa-brands fa-facebook-f" /></a>
-                <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn"><i className="fa-brands fa-linkedin-in" /></a>
-                <a href="https://www.twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter"><i className="fa-brands fa-twitter" /></a>
+                <a href="#" aria-label="Facebook"><i className="fa-brands fa-facebook-f" /></a>
+                <a href="#" aria-label="LinkedIn"><i className="fa-brands fa-linkedin-in" /></a>
+                <a href="#" aria-label="Twitter"><i className="fa-brands fa-twitter" /></a>
               </div>
             </div>
             <div className="footer-links">
