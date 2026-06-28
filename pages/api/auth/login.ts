@@ -20,14 +20,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Server misconfiguration: JWT_SECRET is not set.' });
     }
 
-    const { email, mobile, password } = req.body;
-    const loginId = email?.trim().toLowerCase() || mobile?.trim();
+    const { emailOrMobile, email, mobile, username, password } = req.body;
+    const identifier = (emailOrMobile || email || mobile || username)?.trim();
+    const normalizedIdentifier = identifier?.toLowerCase();
+    const trimmedPassword = typeof password === 'string' ? password.trim() : '';
 
-    if (!loginId || !password) {
-      return res.status(400).json({ error: 'Email/mobile and password are required.' });
+    if (!normalizedIdentifier || !trimmedPassword) {
+      return res.status(400).json({ success: false, message: 'Email/mobile and password are required' });
     }
 
-    const result = await loginUser(loginId, password);
+    const result = await loginUser(normalizedIdentifier, trimmedPassword);
     if (!result.success || !result.user) {
       return res.status(401).json({ error: result.message || 'Invalid email/mobile or password.' });
     }

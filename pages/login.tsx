@@ -15,16 +15,24 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password })
-      });
+      const trimmedUsername = username.trim();
+      const trimmedPassword = password.trim();
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed. Please check your credentials.');
+      if (!trimmedUsername || !trimmedPassword) {
+        setError('Email/mobile and password are required.');
+        setLoading(false);
+        return;
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Login payload:', { emailOrMobile: trimmedUsername, password: trimmedPassword });
+      }
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emailOrMobile: trimmedUsername, password: trimmedPassword })
       }
 
       if (data.token) {
@@ -113,6 +121,10 @@ export default function LoginPage() {
 
           <div className="auth-redirect-text">
             New dispatcher or employee? <Link href="/register">Register Here</Link>
+          </div>
+
+          <div className="auth-redirect-text">
+            Don't have an account yet? <Link href="/register">Create one now</Link>
           </div>
         </div>
       </main>
