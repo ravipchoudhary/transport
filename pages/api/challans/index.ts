@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getChallans, addChallan } from '../../../../lib/database';
+import { getChallans, addChallan } from '../../../lib/database';
 import jwt from 'jsonwebtoken';
 
 const SECRET = process.env.JWT_SECRET || 'choudhary-transport-secret-2026';
