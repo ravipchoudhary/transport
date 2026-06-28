@@ -5,8 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate",
+    "build": "npm run prisma:generate",
+    "vercel-build": "npm run prisma:generate",
+    "prisma:generate": "node ./node_modules/prisma/build/index.js generate",
     "prisma:dbpush": "prisma db push"
   },
   "dependencies": {
