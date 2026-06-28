@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "start": "next start -p 3000",
-    "build": "next build",
-    "vercel-build": "next build",
+    "build": "node scripts/copy-assets.js && next build",
+    "vercel-build": "node scripts/copy-assets.js && next build",
     "prisma:generate": "node ./node_modules/prisma/build/index.js generate",
     "prisma:dbpush": "prisma db push"
   },
