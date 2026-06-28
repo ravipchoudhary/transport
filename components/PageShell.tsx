@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 
 type PageShellProps = {
@@ -10,6 +11,8 @@ type PageShellProps = {
 };
 
 export default function PageShell({ title, description, children, mainClassName }: PageShellProps) {
+  const [navOpen, setNavOpen] = useState(false);
+
   return (
     <>
       <Head>
@@ -24,17 +27,25 @@ export default function PageShell({ title, description, children, mainClassName 
 
       <header id="site-header">
         <div className="header-container">
-          <Link href="/" className="logo" id="header-logo">
+          <Link href="/" className="logo" id="header-logo" onClick={() => setNavOpen(false)}>
             <span className="logo-icon"><i className="fa-solid fa-truck-fast" /></span>
             <span className="logo-text">CHOUDHARY<span className="accent-text">TRANSPORT</span></span>
           </Link>
-          <nav id="main-nav">
-            <Link href="/" className="nav-link">Home</Link>
-            <Link href="/services" className="nav-link">Services</Link>
-            <Link href="/fleet" className="nav-link">Our Fleet</Link>
-            <Link href="/booking" className="nav-link">Quick Book</Link>
-            <Link href="/tools" className="nav-link">Client Portal</Link>
-            <Link href="/login" className="nav-link">Admin Portal</Link>
+          <button
+            className="mobile-nav-toggle"
+            aria-expanded={navOpen}
+            aria-label={navOpen ? 'Close navigation' : 'Open navigation'}
+            onClick={() => setNavOpen((prev) => !prev)}
+          >
+            <i className={navOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'} />
+          </button>
+          <nav id="main-nav" className={navOpen ? 'active' : ''}>
+            <Link href="/" className="nav-link" onClick={() => setNavOpen(false)}>Home</Link>
+            <Link href="/services" className="nav-link" onClick={() => setNavOpen(false)}>Services</Link>
+            <Link href="/fleet" className="nav-link" onClick={() => setNavOpen(false)}>Our Fleet</Link>
+            <Link href="/booking" className="nav-link" onClick={() => setNavOpen(false)}>Quick Book</Link>
+            <Link href="/tools" className="nav-link" onClick={() => setNavOpen(false)}>Client Portal</Link>
+            <Link href="/login" className="nav-link" onClick={() => setNavOpen(false)}>Admin Portal</Link>
           </nav>
           <div className="header-actions">
             <Link href="/booking" className="btn btn-primary" id="nav-btn-book">Book Now</Link>

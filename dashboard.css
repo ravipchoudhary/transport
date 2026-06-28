@@ -806,11 +806,28 @@
     left: -280px;
     top: 0;
     height: 100%;
+    width: 280px;
+    z-index: 95;
   }
 
   .dash-sidebar.active {
     left: 0;
     box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .dashboard-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition-smooth);
+    z-index: 90;
+  }
+
+  .dashboard-overlay.active {
+    opacity: 1;
+    visibility: visible;
   }
 
   .sidebar-toggle-btn {

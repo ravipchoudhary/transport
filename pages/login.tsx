@@ -22,7 +22,6 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
-      // Persist token for API calls
       if (data.token) {
         localStorage.setItem('authToken', data.token);
       }
@@ -40,40 +39,56 @@ export default function LoginPage() {
         <title>Login | Choudhary Transport</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'linear-gradient(135deg, rgba(3,82,255,0.08), rgba(6,188,132,0.08))' }}>
-        <div className="auth-container" style={{ maxWidth: 440 }}>
-          <div className="auth-header">
-            <Link href="/" className="logo">
-              <span className="logo-icon"><i className="fa-solid fa-truck-fast" /></span>
-              <span className="logo-text">CHOUDHARY<span className="accent-text">TRANSPORT</span></span>
-            </Link>
-            <h2>Welcome Back</h2>
-            <p>Secure Administrator & Dispatcher Portal</p>
+      <main className="login-page">
+        <div className="login-card">
+          <div className="login-side">
+            <div className="login-side-content">
+              <div className="logo login-logo">
+                <span className="logo-icon"><i className="fa-solid fa-truck-fast" /></span>
+                <span className="logo-text">CHOUDHARY<span className="accent-text">TRANSPORT</span></span>
+              </div>
+              <h1>Welcome back</h1>
+              <p>Sign in securely to access your administration panel, create challans, and manage fleet operations from the dispatch portal.</p>
+            </div>
           </div>
-          <form onSubmit={handleSubmit}>
-            <div className="input-group">
-              <label htmlFor="email">Email Address / Mobile Number</label>
-              <div className="input-with-icon">
-                <i className="fa-solid fa-envelope" />
-                <input id="email" type="text" placeholder="admin@choudhary.com" value={username} onChange={(e) => setUsername(e.target.value)} />
+          <div className="login-form-panel">
+            <div className="login-form-inner">
+              <div className="login-header">
+                <div className="logo login-logo-sm">
+                  <span className="logo-icon"><i className="fa-solid fa-truck-fast" /></span>
+                  <span className="logo-text">CHOUDHARY<span className="accent-text">TRANSPORT</span></span>
+                </div>
+                <h2>Administrator Login</h2>
+                <p>Enter your email/mobile and password to continue.</p>
+              </div>
+              <form onSubmit={handleSubmit} className="login-form" autoComplete="off">
+                <div className="input-group">
+                  <label htmlFor="email">Email Address / Mobile Number</label>
+                  <div className="input-with-icon">
+                    <i className="fa-solid fa-envelope" />
+                    <input id="email" type="text" placeholder="admin@choudhary.com" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                  </div>
+                </div>
+                <div className="input-group">
+                  <label htmlFor="password">Password</label>
+                  <div className="input-with-icon">
+                    <i className="fa-solid fa-lock" />
+                    <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  </div>
+                </div>
+                {error && <div className="form-error">{error}</div>}
+                <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
+                  {loading ? 'Signing in…' : 'Authenticate & Enter'}
+                </button>
+              </form>
+              <div className="auth-footer-links">
+                <a href="#">Forgot Password?</a>
+                <Link href="/">Home Page</Link>
+              </div>
+              <div className="auth-redirect-text">
+                New dispatcher or employee? <Link href="/register">Register Here</Link>
               </div>
             </div>
-            <div className="input-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-with-icon">
-                <i className="fa-solid fa-lock" />
-                <input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-            </div>
-            {error && <div className="form-error" style={{ color: 'var(--danger)', marginBottom: 8 }}>{error}</div>}
-            <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>{loading ? 'Signing in…' : 'Authenticate & Enter'}</button>
-          </form>
-          <div className="auth-footer-links" style={{ justifyContent: 'space-between' }}>
-            <a href="#">Forgot Password?</a>
-            <Link href="/">Home Page</Link>
-          </div>
-          <div className="auth-redirect-text">
-            New dispatcher or employee? <Link href="/register">Register Here</Link>
           </div>
         </div>
       </main>

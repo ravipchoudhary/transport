@@ -8,8 +8,8 @@ export default function RegisterPage() {
         <title>Register | Choudhary Transport</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'linear-gradient(135deg, rgba(3,82,255,0.08), rgba(6,188,132,0.08))' }}>
-        <div className="auth-container" style={{ maxWidth: 500 }}>
+      <main className="auth-page">
+        <div className="auth-container">
           <div className="auth-header">
             <Link href="/" className="logo">
               <span className="logo-icon"><i className="fa-solid fa-truck-fast" /></span>
