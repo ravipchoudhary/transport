@@ -1,8 +1,12 @@
 import prisma from './prisma';
-import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
-function hashPassword(password: string) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+async function hashPassword(password: string) {
+  return bcrypt.hash(password, 10);
+}
+
+async function comparePassword(password: string, hashedPassword: string) {
+  return bcrypt.compare(password, hashedPassword);
 }
 
 function normalizeDate(dateString?: string | null) {
@@ -11,19 +15,56 @@ function normalizeDate(dateString?: string | null) {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-export async function registerUser(fullName: string, mobile: string, email: string, password: string, role?: string) {
-  const existing = await prisma.user.findFirst({ where: { OR: [{ email }, { mobile }] } });
-  if (existing) return { success: false, message: 'Email or Mobile number is already registered.' };
+export async function registerUser(data: {
+  fullName: string;
+  mobile: string;
+  email: string;
+  password: string;
+  role?: string;
+}) {
+  const normalizedEmail = data.email.trim().toLowerCase();
+  const normalizedMobile = data.mobile.trim();
 
-  const user = await prisma.user.create({ data: { fullName, mobile, email, password: hashPassword(password), role: role || 'Administrator' } });
-  return { success: true, user: { id: user.id, fullName: user.fullName, email: user.email, role: user.role, mobile: user.mobile } };
+  const existing = await prisma.user.findFirst({
+    where: {
+      OR: [{ email: normalizedEmail }, { mobile: normalizedMobile }]
+    }
+  });
+  if (existing) return { success: false, message: 'Email or mobile number is already registered.' };
+
+  const user = await prisma.user.create({
+    data: {
+      fullName: data.fullName.trim(),
+      mobile: normalizedMobile,
+      email: normalizedEmail,
+      password: await hashPassword(data.password),
+      role: data.role?.trim() || 'Administrator'
+    }
+  });
+  return {
+    success: true,
+    user: { id: user.id, fullName: user.fullName, email: user.email, role: user.role, mobile: user.mobile }
+  };
 }
 
-export async function loginUser(username: string, password: string) {
-  const hashedPassword = hashPassword(password);
-  const user = await prisma.user.findFirst({ where: { AND: [{ password: hashedPassword }, { OR: [{ email: username }, { mobile: username }] }] } });
+export async function loginUser(emailOrMobile: string, password: string) {
+  const lookup = emailOrMobile.trim();
+  const normalizedEmail = lookup.toLowerCase();
+
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [{ email: normalizedEmail }, { mobile: lookup }]
+    }
+  });
   if (!user) return { success: false, message: 'Invalid email/mobile or password.' };
-  return { success: true, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, role: user.role } };
+
+  const isValidPassword = await comparePassword(password, user.password);
+  if (!isValidPassword) return { success: false, message: 'Invalid email/mobile or password.' };
+
+  return {
+    success: true,
+    user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, role: user.role }
+  };
 }
 
 export async function getChallans(userId: string) {

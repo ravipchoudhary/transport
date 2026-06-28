@@ -34,6 +34,9 @@ export default function LoginPage() {
       if (data?.token) {
         localStorage.setItem('authToken', data.token);
       }
+      if (data?.user) {
+        localStorage.setItem('authUser', JSON.stringify(data.user));
+      }
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login error');
