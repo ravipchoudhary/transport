@@ -18,10 +18,8 @@ const asyncHandler = (fn) => (req, res, next) => {
 // Middleware for parsing JSON requests
 app.use(express.json());
 
-// Serve static files only when running locally as a standalone server.
-if (require.main === module) {
-  app.use(express.static(__dirname));
-}
+// Serve static files from the project root in all environments.
+app.use(express.static(__dirname));
 
 // --- JWT Verification Middleware ---
 function authenticateToken(req, res, next) {
