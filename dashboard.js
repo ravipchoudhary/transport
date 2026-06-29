@@ -550,7 +550,7 @@ function launchQrScanner() {
 
 // Trigger edit mode on form
 function triggerEditChallan(id) {
-  const challan = challanList.find(c => c.id === id);
+  const challan = challanList.find(c => String(c.id) === String(id));
   if (!challan) return;
 
   // Fill out form inputs
@@ -583,7 +583,7 @@ function triggerEditChallan(id) {
 
 // Trigger Delete
 async function triggerDeleteChallan(id) {
-  const challan = challanList.find(c => c.id === id);
+  const challan = challanList.find(c => String(c.id) === String(id));
   if (!challan) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Challan Log #${challan.challanNo} for ${challan.dealerName}?`);
@@ -610,7 +610,7 @@ async function triggerDeleteChallan(id) {
 
 // --- Invoice Details Modal View ---
 function triggerViewChallan(id) {
-  const challan = challanList.find(c => c.id === id);
+  const challan = challanList.find(c => String(c.id) === String(id));
   if (!challan) return;
 
   const modal = document.getElementById("challan-view-modal");
@@ -838,14 +838,14 @@ function formatDate(dateString) {
   if (!dateString) return '';
   const date = new Date(dateString);
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  return date.toLocaleDateString('en-US', options);
+  return date.toLocaleDateString('en-IN', options);
 }
 
 function formatMonthDisplay(yearMonth) {
   if (!yearMonth) return '';
   const [year, month] = yearMonth.split('-');
   const date = new Date(year, parseInt(month) - 1, 1);
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return date.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 }
 
 function escapeHTML(str) {
@@ -1106,7 +1106,7 @@ function showDieselFormFeedback(msg, type) {
 }
 
 function triggerEditDiesel(id) {
-  const entry = dieselList.find(d => d.id === id);
+  const entry = dieselList.find(d => String(d.id) === String(id));
   if (!entry) return;
 
   document.getElementById("form-diesel-id").value = entry.id;
@@ -1131,7 +1131,7 @@ function triggerEditDiesel(id) {
 }
 
 async function triggerDeleteDiesel(id) {
-  const entry = dieselList.find(d => d.id === id);
+  const entry = dieselList.find(d => String(d.id) === String(id));
   if (!entry) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Diesel Log for ${entry.driverName} on ${entry.date}?`);
@@ -1488,7 +1488,7 @@ function showMechanicFormFeedback(msg, type) {
 }
 
 function triggerEditMechanic(id) {
-  const m = mechanicList.find(x => x.id === id);
+  const m = mechanicList.find(x => String(x.id) === String(id));
   if (!m) return;
 
   document.getElementById("form-mechanic-id").value = m.id;
@@ -1512,7 +1512,7 @@ function triggerEditMechanic(id) {
 }
 
 async function triggerDeleteMechanic(id) {
-  const m = mechanicList.find(x => x.id === id);
+  const m = mechanicList.find(x => String(x.id) === String(id));
   if (!m) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Mechanic Expense for ${m.mechanicName}?`);
@@ -1849,7 +1849,7 @@ function showDriverFormFeedback(msg, type) {
 }
 
 function triggerEditDriver(id) {
-  const d = driverList.find(x => x.id === id);
+  const d = driverList.find(x => String(x.id) === String(id));
   if (!d) return;
 
   document.getElementById("form-driver-id").value = d.id;
@@ -1872,7 +1872,7 @@ function triggerEditDriver(id) {
 }
 
 async function triggerDeleteDriver(id) {
-  const d = driverList.find(x => x.id === id);
+  const d = driverList.find(x => String(x.id) === String(id));
   if (!d) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Driver Record for ${d.driverName}?`);
@@ -2245,7 +2245,7 @@ function showVehicleFormFeedback(msg, type) {
 }
 
 function triggerEditVehicle(id) {
-  const v = vehicleList.find(x => x.id === id);
+  const v = vehicleList.find(x => String(x.id) === String(id));
   if (!v) return;
 
   document.getElementById("form-vehicle-id").value = v.id;
@@ -2274,7 +2274,7 @@ function triggerEditVehicle(id) {
 }
 
 async function triggerDeleteVehicle(id) {
-  const v = vehicleList.find(x => x.id === id);
+  const v = vehicleList.find(x => String(x.id) === String(id));
   if (!v) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Vehicle Profile for ${v.vehicleNumber}?`);
@@ -2553,7 +2553,7 @@ function showDriverProfileFormFeedback(msg, type) {
 }
 
 function triggerEditDriverProfile(id) {
-  const dp = driverProfileList.find(x => x.id === id);
+  const dp = driverProfileList.find(x => String(x.id) === String(id));
   if (!dp) return;
 
   document.getElementById("form-dp-id").value = dp.id;
@@ -2602,7 +2602,7 @@ function triggerEditDriverProfile(id) {
 }
 
 async function triggerDeleteDriverProfile(id) {
-  const dp = driverProfileList.find(x => x.id === id);
+  const dp = driverProfileList.find(x => String(x.id) === String(id));
   if (!dp) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Driver Profile for ${dp.driverName}?`);

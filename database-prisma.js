@@ -8,7 +8,27 @@ function hashPassword(password) {
 }
 
 function normalizeDate(dateString) {
-  return dateString ? new Date(dateString) : null;
+  if (!dateString) return null;
+  if (dateString instanceof Date) return dateString;
+
+  // Accept common formats: YYYY-MM-DD (ISO) and DD-MM-YYYY (display)
+  const ddmmyyyy = /^\d{2}-\d{2}-\d{4}$/;
+  const yyyymmdd = /^\d{4}-\d{2}-\d{2}$/;
+
+  try {
+    if (ddmmyyyy.test(dateString)) {
+      const [d, m, y] = dateString.split('-');
+      return new Date(`${y}-${m}-${d}T00:00:00`);
+    }
+    if (yyyymmdd.test(dateString)) {
+      return new Date(`${dateString}T00:00:00`);
+    }
+
+    const parsed = new Date(dateString);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  } catch (e) {
+    return null;
+  }
 }
 
 async function registerUser(fullName, mobile, email, password, role) {

@@ -121,13 +121,30 @@ export default function DashboardPage() {
     if (parts.length === 3) {
       const [first, second, third] = parts;
       if (first.length === 4 && second.length <= 2 && third.length <= 2) {
+        // ISO format: YYYY-MM-DD
         return `${first.padStart(4, '0')}-${second.padStart(2, '0')}-${third.padStart(2, '0')}`;
       }
       if (third.length === 4 && first.length <= 2 && second.length <= 2) {
-        return `${third.padStart(4, '0')}-${first.padStart(2, '0')}-${second.padStart(2, '0')}`;
+        // Assume DD-MM-YYYY for Indian dates.
+        return `${third.padStart(4, '0')}-${second.padStart(2, '0')}-${first.padStart(2, '0')}`;
       }
     }
-    const parsed = new Date(dateValue);
+
+    const monthNames: Record<string, string> = {
+      january: '01', february: '02', march: '03', april: '04', may: '05', june: '06',
+      july: '07', august: '08', september: '09', october: '10', november: '11', december: '12',
+      jan: '01', feb: '02', mar: '03', apr: '04', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12',
+    };
+
+    const monthTextMatch = dateValue.match(/(\d{1,2})\s*[-./]?\s*([A-Za-z]+)\s*['\s]*\s*(\d{4})/i);
+    if (monthTextMatch) {
+      const day = monthTextMatch[1].padStart(2, '0');
+      const month = monthNames[monthTextMatch[2].toLowerCase()] || '01';
+      const year = monthTextMatch[3];
+      return `${year}-${month}-${day}`;
+    }
+
+    const parsed = new Date(cleaned);
     if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
     return null;
   };
@@ -869,6 +886,7 @@ export default function DashboardPage() {
       <Head>
         <title>Admin Dashboard | Choudhary Transport</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossOrigin="anonymous" />
       </Head>
       <div className="dash-layout">
         <aside className={`dash-sidebar${sidebarOpen ? ' active' : ''}`}>
