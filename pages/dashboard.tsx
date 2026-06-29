@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Head from 'next/head';
-import { useEffect, useRef, useState, FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, FormEvent } from 'react';
 
 type Challan = {
   id: string;
@@ -23,6 +23,10 @@ export default function DashboardPage() {
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [qrScannerError, setQrScannerError] = useState<string | null>(null);
   const [scannerStream, setScannerStream] = useState<MediaStream | null>(null);
+  const [vehicleOptions, setVehicleOptions] = useState<string[]>([]);
+  const [challanSearch, setChallanSearch] = useState('');
+  const [challanMonthFilter, setChallanMonthFilter] = useState('all');
+  const [challanVehicleFilter, setChallanVehicleFilter] = useState('all');
   const [challans, setChallans] = useState<Challan[]>([]);
   const [challanLoading, setChallanLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
@@ -100,6 +104,83 @@ export default function DashboardPage() {
     const dd = String(today.getDate()).padStart(2, '0');
     const dateInput = document.getElementById('form-challan-date') as HTMLInputElement | null;
     if (dateInput) dateInput.value = `${yyyy}-${mm}-${dd}`;
+  };
+
+  const loadVehicleOptions = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch('/api/vehicles', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) return;
+      const data = await response.json();
+      const vehicleNumbers = Array.isArray(data)
+        ? data
+            .map((item: any) => String(item.vehicleNumber || '').trim())
+            .filter((item) => item.length > 0)
+        : [];
+      setVehicleOptions(vehicleNumbers);
+    } catch (error) {
+      console.error('Error loading vehicle options:', error);
+    }
+  };
+
+  const filteredChallans = useMemo(() => {
+    return challans.filter((item) => {
+      const matchesSearch = challanSearch
+        ? [item.challanNo, item.dealerName, item.vehicleNumber, item.driverName]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(challanSearch.toLowerCase()))
+        : true;
+
+      const matchesMonth = challanMonthFilter === 'all'
+        ? true
+        : (() => {
+            const date = new Date(item.date);
+            const itemMonth = String(date.getMonth() + 1).padStart(2, '0');
+            return itemMonth === challanMonthFilter;
+          })();
+
+      const matchesVehicle = challanVehicleFilter === 'all'
+        ? true
+        : item.vehicleNumber === challanVehicleFilter;
+
+      return matchesSearch && matchesMonth && matchesVehicle;
+    });
+  }, [challans, challanSearch, challanMonthFilter, challanVehicleFilter]);
+
+  const exportChallansCsv = () => {
+    const rows = filteredChallans.map((c) => [
+      c.challanNo,
+      c.dealerName,
+      c.vehicleNumber || '',
+      c.driverName || '',
+      formatDate(c.date),
+      c.riceBags,
+      c.wheatBags,
+      c.totalBags,
+      c.ratePerBag,
+      c.calculatedAmount,
+    ]);
+
+    const csvHeader = 'Challan No,Dealer Name,Vehicle Number,Driver Name,Date,Rice Bags,Wheat Bags,Total Bags,Rate,Amount';
+    const csvContent = [
+      csvHeader,
+      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'challans-export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const loadChallans = async () => {
@@ -265,6 +346,7 @@ export default function DashboardPage() {
       setReportMonth(String(today.getMonth() + 1).padStart(2, '0'));
       setReportYear(String(today.getFullYear()));
     }
+    loadVehicleOptions();
     loadChallans();
   }, []);
 
@@ -324,11 +406,11 @@ export default function DashboardPage() {
       const barcodes = await barcodeDetectorRef.current.detect(video);
       if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
         const qrValue = barcodes[0].rawValue.trim();
-        const qrcodeInput = document.getElementById('form-qrcode-input') as HTMLInputElement | null;
-        if (qrcodeInput) qrcodeInput.value = qrValue;
+        let parsedSuccessfully = false;
 
         try {
           const parsed = JSON.parse(qrValue);
+          parsedSuccessfully = true;
 
           const challanNoInput = document.getElementById('form-challan-no') as HTMLInputElement | null;
           const dealerNameInput = document.getElementById('form-dealer-name') as HTMLInputElement | null;
@@ -346,7 +428,12 @@ export default function DashboardPage() {
           if (parsed.riceBags !== undefined && riceBagsInput) riceBagsInput.value = String(parsed.riceBags);
           if (parsed.wheatBags !== undefined && wheatBagsInput) wheatBagsInput.value = String(parsed.wheatBags);
         } catch (parseError) {
-          // If QR data is not JSON, just fill the raw value into the QR field.
+          parsedSuccessfully = false;
+        }
+
+        if (!parsedSuccessfully) {
+          const qrcodeInput = document.getElementById('form-qrcode-input') as HTMLInputElement | null;
+          if (qrcodeInput) qrcodeInput.value = qrValue;
         }
 
         closeQrScanner();
@@ -541,12 +628,51 @@ export default function DashboardPage() {
                     <div className="filter-row">
                       <div className="search-box">
                         <i className="fa-solid fa-magnifying-glass" />
-                        <input type="text" id="challan-search" placeholder="Search Dealer / Challan No..." />
+                        <input
+                          type="text"
+                          id="challan-search"
+                          value={challanSearch}
+                          onChange={(e) => setChallanSearch(e.target.value)}
+                          placeholder="Search Dealer / Challan No..."
+                        />
                       </div>
                       <div className="month-filter">
-                        <select id="challan-month-filter">
+                        <select
+                          id="challan-month-filter"
+                          value={challanMonthFilter}
+                          onChange={(e) => setChallanMonthFilter(e.target.value)}
+                        >
                           <option value="all">All Months</option>
+                          <option value="01">January</option>
+                          <option value="02">February</option>
+                          <option value="03">March</option>
+                          <option value="04">April</option>
+                          <option value="05">May</option>
+                          <option value="06">June</option>
+                          <option value="07">July</option>
+                          <option value="08">August</option>
+                          <option value="09">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
                         </select>
+                      </div>
+                      <div className="month-filter">
+                        <select
+                          id="challan-vehicle-filter"
+                          value={challanVehicleFilter}
+                          onChange={(e) => setChallanVehicleFilter(e.target.value)}
+                        >
+                          <option value="all">All Vehicles</option>
+                          {vehicleOptions.map((vehicle) => (
+                            <option key={vehicle} value={vehicle}>{vehicle}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="month-filter">
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={exportChallansCsv}>
+                          <i className="fa-solid fa-file-csv" /> Export CSV
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -573,7 +699,7 @@ export default function DashboardPage() {
                         </tr>
                       </thead>
                       <tbody id="challan-table-rows">
-                        {challans.map((c) => (
+                        {filteredChallans.map((c) => (
                           <tr key={c.id} id={`row-${c.id}`}>
                             <td className="font-bold text-white">{c.challanNo}</td>
                             <td>{c.dealerName}</td>
@@ -635,7 +761,12 @@ export default function DashboardPage() {
                           <label htmlFor="form-challan-vehicle">Vehicle Number</label>
                           <div className="input-with-icon">
                             <i className="fa-solid fa-truck" />
-                            <input type="text" id="form-challan-vehicle" placeholder="e.g. RJ-14-GD-8921" />
+                            <input list="vehicle-number-options" type="text" id="form-challan-vehicle" placeholder="Select or type vehicle number" />
+                            <datalist id="vehicle-number-options">
+                              {vehicleOptions.map((vehicle) => (
+                                <option key={vehicle} value={vehicle} />
+                              ))}
+                            </datalist>
                           </div>
                         </div>
                         <div className="input-group">
