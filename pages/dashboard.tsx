@@ -136,53 +136,75 @@ export default function DashboardPage() {
     if (!payload) return null;
     let parsed: any = null;
 
-    try {
-      parsed = JSON.parse(payload);
-    } catch {
-      const normalized = payload
-        .replace(/\r\n/g, '\n')
-        .replace(/[;|]+/g, '\n')
-        .split('\n')
-        .map((part) => part.trim())
-        .filter(Boolean);
+    const specialTruckChallan = {} as any;
+    const truckChallanPattern = /Truck\s*Challan\s*[:\s]*([A-Z0-9-]+)\s+([0-9]{1,2}[./-][0-9]{1,2}[./-][0-9]{2,4})\s*\(?([A-Z0-9- ]+?)\)?/i;
+    const dealerNamePattern = /Dealer\s*Name\s*[:\s]*([^:\n\r]+?)(?:\s+Panchayath|$)/i;
 
-      const mapKey = (key: string) => {
-        const raw = key.toLowerCase().replace(/[^a-z]/g, '');
-        return {
-          challanno: 'challanNo',
-          challannumber: 'challanNo',
-          challan: 'challanNo',
-          dealernames: 'dealerName',
-          dealername: 'dealerName',
-          dealer: 'dealerName',
-          vehiclenumber: 'vehicleNumber',
-          vehicle: 'vehicleNumber',
-          drivername: 'driverName',
-          driver: 'driverName',
-          date: 'date',
-          ricebags: 'riceBags',
-          wheatbags: 'wheatBags',
-          rate: 'ratePerBag',
-          amount: 'calculatedAmount',
-        }[raw] || key;
-      };
+    const truckMatch = payload.match(truckChallanPattern);
+    if (truckMatch) {
+      specialTruckChallan.challanNo = truckMatch[1].trim();
+      specialTruckChallan.date = normalizeQrDate(truckMatch[2].trim()) || truckMatch[2].trim();
+      specialTruckChallan.vehicleNumber = truckMatch[3].trim();
+    }
 
-      const result: any = {};
-      normalized.forEach((line) => {
-        const parts = line.split(/[:=]/);
-        if (parts.length < 2) return;
-        const key = parts[0].trim();
-        const value = parts.slice(1).join(':').trim();
-        const normalizedKey = mapKey(key);
-        if (['riceBags', 'wheatBags', 'ratePerBag', 'calculatedAmount'].includes(normalizedKey)) {
-          result[normalizedKey] = Number(value) || 0;
-        } else if (normalizedKey === 'date') {
-          result[normalizedKey] = normalizeQrDate(value) || value;
-        } else {
-          result[normalizedKey] = value;
-        }
-      });
-      parsed = Object.keys(result).length ? result : null;
+    const dealerMatch = payload.match(dealerNamePattern);
+    if (dealerMatch) {
+      specialTruckChallan.dealerName = dealerMatch[1].trim();
+    }
+
+    if (Object.keys(specialTruckChallan).length) {
+      parsed = specialTruckChallan;
+    }
+
+    if (!parsed) {
+      try {
+        parsed = JSON.parse(payload);
+      } catch {
+        const normalized = payload
+          .replace(/\r\n/g, '\n')
+          .replace(/[;|]+/g, '\n')
+          .split('\n')
+          .map((part) => part.trim())
+          .filter(Boolean);
+
+        const mapKey = (key: string) => {
+          const raw = key.toLowerCase().replace(/[^a-z]/g, '');
+          return {
+            challanno: 'challanNo',
+            challannumber: 'challanNo',
+            challan: 'challanNo',
+            dealernames: 'dealerName',
+            dealername: 'dealerName',
+            dealer: 'dealerName',
+            vehiclenumber: 'vehicleNumber',
+            vehicle: 'vehicleNumber',
+            drivername: 'driverName',
+            driver: 'driverName',
+            date: 'date',
+            ricebags: 'riceBags',
+            wheatbags: 'wheatBags',
+            rate: 'ratePerBag',
+            amount: 'calculatedAmount',
+          }[raw] || key;
+        };
+
+        const result: any = {};
+        normalized.forEach((line) => {
+          const parts = line.split(/[:=]/);
+          if (parts.length < 2) return;
+          const key = parts[0].trim();
+          const value = parts.slice(1).join(':').trim();
+          const normalizedKey = mapKey(key);
+          if (['riceBags', 'wheatBags', 'ratePerBag', 'calculatedAmount'].includes(normalizedKey)) {
+            result[normalizedKey] = Number(value) || 0;
+          } else if (normalizedKey === 'date') {
+            result[normalizedKey] = normalizeQrDate(value) || value;
+          } else {
+            result[normalizedKey] = value;
+          }
+        });
+        parsed = Object.keys(result).length ? result : null;
+      }
     }
 
     if (parsed?.date && typeof parsed.date === 'string') {
