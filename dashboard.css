@@ -135,17 +135,34 @@
 }
 
 .sidebar-toggle-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid transparent;
   color: var(--text-muted);
   font-size: 1.35rem;
   cursor: pointer;
-  display: none;
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
   transition: var(--transition-smooth);
 }
 
 .sidebar-toggle-btn:hover {
   color: white;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.sidebar-toggle-text {
+  display: none;
+  margin-left: 8px;
+  font-size: 0.95rem;
+  color: inherit;
+}
+
+@media (max-width: 1200px) {
+  .sidebar-toggle-text {
+    display: inline-block;
+  }
 }
 
 .workspace-title {

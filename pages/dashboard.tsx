@@ -17,6 +17,35 @@ type Challan = {
   scannedData?: string | null;
 };
 
+type VehicleProfile = {
+  id: string;
+  vehicleNumber: string;
+  vehicleType: string;
+  ownerName: string;
+  roadTaxExpiry?: string | null;
+  insuranceExpiry?: string | null;
+  pucExpiry?: string | null;
+  fitnessExpiry?: string | null;
+  permitExpiry?: string | null;
+  rcDocument?: string | null;
+  remarks?: string | null;
+};
+
+type DriverProfile = {
+  id: string;
+  driverName: string;
+  mobileNumber: string;
+  assignedVehicleNumber?: string | null;
+  address?: string | null;
+  aadhaarNumber?: string | null;
+  licenseNumber?: string | null;
+  joiningDate?: string | null;
+  remarks?: string | null;
+  driverPhoto?: string | null;
+  aadhaarPhoto?: string | null;
+  licensePhoto?: string | null;
+};
+
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'challan' | 'vehicle' | 'driver-profile' | 'driver' | 'mechanic' | 'diesel'>('challan');
@@ -24,6 +53,15 @@ export default function DashboardPage() {
   const [qrScannerError, setQrScannerError] = useState<string | null>(null);
   const [scannerStream, setScannerStream] = useState<MediaStream | null>(null);
   const [vehicleOptions, setVehicleOptions] = useState<string[]>([]);
+  const [vehicleProfiles, setVehicleProfiles] = useState<VehicleProfile[]>([]);
+  const [vehicleSearch, setVehicleSearch] = useState('');
+  const [vehicleFilter, setVehicleFilter] = useState<'all' | 'expiring'>('all');
+  const [vehicleLoading, setVehicleLoading] = useState(true);
+  const [vehicleStats, setVehicleStats] = useState({ totalVehicles: 0, expiringAlerts: 0 });
+  const [driverProfiles, setDriverProfiles] = useState<DriverProfile[]>([]);
+  const [driverProfileSearch, setDriverProfileSearch] = useState('');
+  const [driverProfileLoading, setDriverProfileLoading] = useState(true);
+  const [driverStats, setDriverStats] = useState({ totalDrivers: 0, assignedDrivers: 0 });
   const [challanSearch, setChallanSearch] = useState('');
   const [challanMonthFilter, setChallanMonthFilter] = useState('all');
   const [challanVehicleFilter, setChallanVehicleFilter] = useState('all');
@@ -76,6 +114,85 @@ export default function DashboardPage() {
     return date.toLocaleDateString('en-GB');
   };
 
+  const normalizeQrDate = (dateValue: string): string | null => {
+    if (!dateValue) return null;
+    const cleaned = dateValue.trim().replace(/[.\/]/g, '-');
+    const parts = cleaned.split('-').map((part) => part.trim());
+    if (parts.length === 3) {
+      const [first, second, third] = parts;
+      if (first.length === 4 && second.length <= 2 && third.length <= 2) {
+        return `${first.padStart(4, '0')}-${second.padStart(2, '0')}-${third.padStart(2, '0')}`;
+      }
+      if (third.length === 4 && first.length <= 2 && second.length <= 2) {
+        return `${third.padStart(4, '0')}-${first.padStart(2, '0')}-${second.padStart(2, '0')}`;
+      }
+    }
+    const parsed = new Date(dateValue);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+    return null;
+  };
+
+  const parseQrPayload = (payload: string) => {
+    if (!payload) return null;
+    let parsed: any = null;
+
+    try {
+      parsed = JSON.parse(payload);
+    } catch {
+      const normalized = payload
+        .replace(/\r\n/g, '\n')
+        .replace(/[;|]+/g, '\n')
+        .split('\n')
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+      const mapKey = (key: string) => {
+        const raw = key.toLowerCase().replace(/[^a-z]/g, '');
+        return {
+          challanno: 'challanNo',
+          challannumber: 'challanNo',
+          challan: 'challanNo',
+          dealernames: 'dealerName',
+          dealername: 'dealerName',
+          dealer: 'dealerName',
+          vehiclenumber: 'vehicleNumber',
+          vehicle: 'vehicleNumber',
+          drivername: 'driverName',
+          driver: 'driverName',
+          date: 'date',
+          ricebags: 'riceBags',
+          wheatbags: 'wheatBags',
+          rate: 'ratePerBag',
+          amount: 'calculatedAmount',
+        }[raw] || key;
+      };
+
+      const result: any = {};
+      normalized.forEach((line) => {
+        const parts = line.split(/[:=]/);
+        if (parts.length < 2) return;
+        const key = parts[0].trim();
+        const value = parts.slice(1).join(':').trim();
+        const normalizedKey = mapKey(key);
+        if (['riceBags', 'wheatBags', 'ratePerBag', 'calculatedAmount'].includes(normalizedKey)) {
+          result[normalizedKey] = Number(value) || 0;
+        } else if (normalizedKey === 'date') {
+          result[normalizedKey] = normalizeQrDate(value) || value;
+        } else {
+          result[normalizedKey] = value;
+        }
+      });
+      parsed = Object.keys(result).length ? result : null;
+    }
+
+    if (parsed?.date && typeof parsed.date === 'string') {
+      const normalizedDate = normalizeQrDate(parsed.date);
+      if (normalizedDate) parsed.date = normalizedDate;
+    }
+
+    return parsed;
+  };
+
   const calculateStats = (list: Challan[]) => {
     const totalChallans = list.length;
     const riceBags = list.reduce((sum, item) => sum + (item.riceBags || 0), 0);
@@ -89,11 +206,8 @@ export default function DashboardPage() {
     const rice = Number((document.getElementById('form-rice-bags') as HTMLInputElement | null)?.value || 0);
     const wheat = Number((document.getElementById('form-wheat-bags') as HTMLInputElement | null)?.value || 0);
     const totalBags = rice + wheat;
-    const totalAmount = totalBags * 10;
     const bagsDisplay = document.getElementById('form-total-bags-display');
-    const amountDisplay = document.getElementById('form-amount-display');
     if (bagsDisplay) bagsDisplay.textContent = totalBags.toLocaleString();
-    if (amountDisplay) amountDisplay.textContent = `₹ ${totalAmount.toLocaleString('en-IN')}`;
   };
 
   const setDefaultChallanDate = () => {
@@ -117,12 +231,23 @@ export default function DashboardPage() {
 
       if (!response.ok) return;
       const data = await response.json();
-      const vehicleNumbers = Array.isArray(data)
-        ? data
-            .map((item: any) => String(item.vehicleNumber || '').trim())
-            .filter((item) => item.length > 0)
+      const vehicleList = Array.isArray(data)
+        ? data.map((item: any) => ({
+            id: String(item.id),
+            vehicleNumber: String(item.vehicleNumber || '').trim(),
+            vehicleType: String(item.vehicleType || ''),
+            ownerName: String(item.ownerName || ''),
+            roadTaxExpiry: item.roadTaxExpiry || null,
+            insuranceExpiry: item.insuranceExpiry || null,
+            pucExpiry: item.pucExpiry || null,
+            fitnessExpiry: item.fitnessExpiry || null,
+            permitExpiry: item.permitExpiry || null,
+            rcDocument: item.rcDocument || null,
+            remarks: item.remarks || null,
+          }))
         : [];
-      setVehicleOptions(vehicleNumbers);
+      setVehicleOptions(vehicleList.map((vehicle) => vehicle.vehicleNumber).filter(Boolean));
+      setVehicleProfiles(vehicleList);
     } catch (error) {
       console.error('Error loading vehicle options:', error);
     }
@@ -151,6 +276,44 @@ export default function DashboardPage() {
       return matchesSearch && matchesMonth && matchesVehicle;
     });
   }, [challans, challanSearch, challanMonthFilter, challanVehicleFilter]);
+
+  const filteredVehicleProfiles = useMemo(() => {
+    return vehicleProfiles.filter((item) => {
+      const matchesSearch = vehicleSearch
+        ? [item.vehicleNumber, item.vehicleType, item.ownerName]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(vehicleSearch.toLowerCase()))
+        : true;
+      if (vehicleFilter === 'expiring') {
+        const now = new Date();
+        const isExpiring = ['roadTaxExpiry', 'insuranceExpiry', 'pucExpiry', 'fitnessExpiry', 'permitExpiry']
+          .some((key) => {
+            const value = item[key as keyof VehicleProfile] as string | null | undefined;
+            if (!value) return false;
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return false;
+            const diffDays = (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+            return diffDays <= 30;
+          });
+        return matchesSearch && isExpiring;
+      }
+      return matchesSearch;
+    });
+  }, [vehicleProfiles, vehicleSearch, vehicleFilter]);
+
+  const filteredDriverProfiles = useMemo(() => {
+    return driverProfiles.filter((item) => {
+      const query = driverProfileSearch.toLowerCase().trim();
+      if (!query) return true;
+      return [item.driverName, item.mobileNumber, item.assignedVehicleNumber, item.licenseNumber]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    });
+  }, [driverProfiles, driverProfileSearch]);
+
+  const driverOptions = useMemo(() => {
+    return Array.from(new Set(driverProfiles.map((driver) => driver.driverName).filter(Boolean)));
+  }, [driverProfiles]);
 
   const exportChallansCsv = () => {
     const rows = filteredChallans.map((c) => [
@@ -236,6 +399,87 @@ export default function DashboardPage() {
     }
   };
 
+  const loadVehicleProfiles = async () => {
+    setVehicleLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+      const response = await fetch('/api/vehicles', { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const loadedVehicles: VehicleProfile[] = Array.isArray(data)
+        ? data.map((item: any) => ({
+            id: String(item.id),
+            vehicleNumber: String(item.vehicleNumber || '').trim(),
+            vehicleType: String(item.vehicleType || '').trim(),
+            ownerName: String(item.ownerName || '').trim(),
+            roadTaxExpiry: item.roadTaxExpiry || null,
+            insuranceExpiry: item.insuranceExpiry || null,
+            pucExpiry: item.pucExpiry || null,
+            fitnessExpiry: item.fitnessExpiry || null,
+            permitExpiry: item.permitExpiry || null,
+            rcDocument: item.rcDocument || null,
+            remarks: item.remarks || null,
+          }))
+        : [];
+      setVehicleProfiles(loadedVehicles);
+      setVehicleStats({
+        totalVehicles: loadedVehicles.length,
+        expiringAlerts: loadedVehicles.filter((vehicle) => {
+          const now = new Date();
+          return ['roadTaxExpiry', 'insuranceExpiry', 'pucExpiry', 'fitnessExpiry', 'permitExpiry'].some((key) => {
+            const value = vehicle[key as keyof VehicleProfile] as string | null | undefined;
+            if (!value) return false;
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return false;
+            const diffDays = (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+            return diffDays <= 30;
+          });
+        }).length,
+      });
+    } catch (error) {
+      console.error('Error loading vehicle profiles:', error);
+    } finally {
+      setVehicleLoading(false);
+    }
+  };
+
+  const loadDriverProfiles = async () => {
+    setDriverProfileLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+      const response = await fetch('/api/driver-profiles', { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const loadedDrivers: DriverProfile[] = Array.isArray(data)
+        ? data.map((item: any) => ({
+            id: String(item.id),
+            driverName: String(item.driverName || '').trim(),
+            mobileNumber: String(item.mobileNumber || '').trim(),
+            assignedVehicleNumber: item.assignedVehicleNumber || null,
+            address: item.address || null,
+            aadhaarNumber: item.aadhaarNumber || null,
+            licenseNumber: item.licenseNumber || null,
+            joiningDate: item.joiningDate || null,
+            remarks: item.remarks || null,
+            driverPhoto: item.driverPhoto || null,
+            aadhaarPhoto: item.aadhaarPhoto || null,
+            licensePhoto: item.licensePhoto || null,
+          }))
+        : [];
+      setDriverProfiles(loadedDrivers);
+      setDriverStats({
+        totalDrivers: loadedDrivers.length,
+        assignedDrivers: loadedDrivers.filter((dp) => dp.assignedVehicleNumber && dp.assignedVehicleNumber.trim().length > 0).length,
+      });
+    } catch (error) {
+      console.error('Error loading driver profiles:', error);
+    } finally {
+      setDriverProfileLoading(false);
+    }
+  };
+
   const compileLedger = () => {
     const filtered = challans.filter((item) => {
       const date = new Date(item.date);
@@ -256,10 +500,9 @@ export default function DashboardPage() {
     const form = event.currentTarget;
     const challanNo = (form.querySelector('#form-challan-no') as HTMLInputElement | null)?.value.trim() || '';
     const dealerName = (form.querySelector('#form-dealer-name') as HTMLInputElement | null)?.value.trim() || '';
-    const vehicleNumber = (form.querySelector('#form-challan-vehicle') as HTMLInputElement | null)?.value.trim() || '';
-    const driverName = (form.querySelector('#form-challan-driver') as HTMLInputElement | null)?.value.trim() || '';
+    const vehicleNumber = (form.querySelector('#form-challan-vehicle') as HTMLSelectElement | null)?.value.trim() || '';
+    const driverName = (form.querySelector('#form-challan-driver') as HTMLSelectElement | null)?.value.trim() || '';
     const date = (form.querySelector('#form-challan-date') as HTMLInputElement | null)?.value || '';
-    const qrData = (form.querySelector('#form-qrcode-input') as HTMLInputElement | null)?.value.trim() || '';
     const riceBags = Number((form.querySelector('#form-rice-bags') as HTMLInputElement | null)?.value || 0);
     const wheatBags = Number((form.querySelector('#form-wheat-bags') as HTMLInputElement | null)?.value || 0);
     const ratePerBag = 10;
@@ -278,7 +521,6 @@ export default function DashboardPage() {
       riceBags,
       wheatBags,
       ratePerBag,
-      scannedData: qrData,
     };
 
     try {
@@ -321,7 +563,6 @@ export default function DashboardPage() {
         totalBags: Number(created.totalBags ?? riceBags + wheatBags),
         ratePerBag: Number(created.ratePerBag ?? ratePerBag),
         calculatedAmount: Number(created.calculatedAmount ?? ((riceBags + wheatBags) * ratePerBag)),
-        scannedData: created.scannedData || qrData,
       };
 
       setChallans((current) => {
@@ -339,6 +580,104 @@ export default function DashboardPage() {
     }
   };
 
+  const handleVehicleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const vehicleNumber = (form.querySelector('#form-vehicle-number') as HTMLInputElement | null)?.value.trim() || '';
+    const vehicleType = (form.querySelector('#form-vehicle-type') as HTMLInputElement | null)?.value.trim() || '';
+    const ownerName = (form.querySelector('#form-vehicle-owner') as HTMLInputElement | null)?.value.trim() || '';
+    const roadTaxExpiry = (form.querySelector('#form-roadtax-expiry') as HTMLInputElement | null)?.value || null;
+    const insuranceExpiry = (form.querySelector('#form-insurance-expiry') as HTMLInputElement | null)?.value || null;
+    const pucExpiry = (form.querySelector('#form-puc-expiry') as HTMLInputElement | null)?.value || null;
+    const fitnessExpiry = (form.querySelector('#form-fitness-expiry') as HTMLInputElement | null)?.value || null;
+    const permitExpiry = (form.querySelector('#form-permit-expiry') as HTMLInputElement | null)?.value || null;
+    const remarks = (form.querySelector('#form-vehicle-remarks') as HTMLInputElement | null)?.value.trim() || null;
+
+    if (!vehicleNumber || !vehicleType || !ownerName) {
+      setFormToast('Vehicle number, type, and owner name are required.');
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        logout();
+        return;
+      }
+
+      const response = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ vehicleNumber, vehicleType, ownerName, roadTaxExpiry, insuranceExpiry, pucExpiry, fitnessExpiry, permitExpiry, remarks }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        setFormToast(errorData?.error || 'Unable to save vehicle profile.');
+        return;
+      }
+
+      await loadVehicleOptions();
+      await loadVehicleProfiles();
+      setFormToast('Vehicle profile saved successfully.');
+      form.reset();
+    } catch (error) {
+      console.error('Error submitting vehicle profile:', error);
+      setFormToast('Unable to save vehicle profile. Please try again later.');
+    }
+  };
+
+  const handleDriverProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const driverName = (form.querySelector('#form-driver-profile-name') as HTMLInputElement | null)?.value.trim() || '';
+    const mobileNumber = (form.querySelector('#form-driver-profile-mobile') as HTMLInputElement | null)?.value.trim() || '';
+    const assignedVehicleNumber = (form.querySelector('#form-driver-profile-vehicle') as HTMLInputElement | null)?.value.trim() || null;
+    const address = (form.querySelector('#form-driver-profile-address') as HTMLInputElement | null)?.value.trim() || null;
+    const aadhaarNumber = (form.querySelector('#form-driver-profile-aadhaar') as HTMLInputElement | null)?.value.trim() || null;
+    const licenseNumber = (form.querySelector('#form-driver-profile-license') as HTMLInputElement | null)?.value.trim() || null;
+    const joiningDate = (form.querySelector('#form-driver-profile-joining') as HTMLInputElement | null)?.value || null;
+    const remarks = (form.querySelector('#form-driver-profile-remarks') as HTMLInputElement | null)?.value.trim() || null;
+
+    if (!driverName || !mobileNumber) {
+      setFormToast('Driver name and mobile number are required.');
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        logout();
+        return;
+      }
+
+      const response = await fetch('/api/driver-profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ driverName, mobileNumber, assignedVehicleNumber, address, aadhaarNumber, licenseNumber, joiningDate, remarks }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        setFormToast(errorData?.error || 'Unable to save driver profile.');
+        return;
+      }
+
+      await loadDriverProfiles();
+      setFormToast('Driver profile saved successfully.');
+      form.reset();
+    } catch (error) {
+      console.error('Error submitting driver profile:', error);
+      setFormToast('Unable to save driver profile. Please try again later.');
+    }
+  };
+
   useEffect(() => {
     setDefaultChallanDate();
     if (typeof window !== 'undefined') {
@@ -347,6 +686,8 @@ export default function DashboardPage() {
       setReportYear(String(today.getFullYear()));
     }
     loadVehicleOptions();
+    loadVehicleProfiles();
+    loadDriverProfiles();
     loadChallans();
   }, []);
 
@@ -406,34 +747,26 @@ export default function DashboardPage() {
       const barcodes = await barcodeDetectorRef.current.detect(video);
       if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
         const qrValue = barcodes[0].rawValue.trim();
-        let parsedSuccessfully = false;
+        const parsed = parseQrPayload(qrValue);
 
-        try {
-          const parsed = JSON.parse(qrValue);
-          parsedSuccessfully = true;
-
+        if (parsed) {
           const challanNoInput = document.getElementById('form-challan-no') as HTMLInputElement | null;
           const dealerNameInput = document.getElementById('form-dealer-name') as HTMLInputElement | null;
-          const vehicleInput = document.getElementById('form-challan-vehicle') as HTMLInputElement | null;
-          const driverInput = document.getElementById('form-challan-driver') as HTMLInputElement | null;
+          const vehicleInput = document.getElementById('form-challan-vehicle') as HTMLSelectElement | null;
+          const driverInput = document.getElementById('form-challan-driver') as HTMLSelectElement | null;
           const dateInput = document.getElementById('form-challan-date') as HTMLInputElement | null;
           const riceBagsInput = document.getElementById('form-rice-bags') as HTMLInputElement | null;
           const wheatBagsInput = document.getElementById('form-wheat-bags') as HTMLInputElement | null;
 
           if (parsed.challanNo && challanNoInput) challanNoInput.value = parsed.challanNo;
           if (parsed.dealerName && dealerNameInput) dealerNameInput.value = parsed.dealerName;
+          if (parsed.date && dateInput) dateInput.value = parsed.date;
           if (parsed.vehicleNumber && vehicleInput) vehicleInput.value = parsed.vehicleNumber;
           if (parsed.driverName && driverInput) driverInput.value = parsed.driverName;
-          if (parsed.date && dateInput) dateInput.value = parsed.date;
           if (parsed.riceBags !== undefined && riceBagsInput) riceBagsInput.value = String(parsed.riceBags);
           if (parsed.wheatBags !== undefined && wheatBagsInput) wheatBagsInput.value = String(parsed.wheatBags);
-        } catch (parseError) {
-          parsedSuccessfully = false;
-        }
 
-        if (!parsedSuccessfully) {
-          const qrcodeInput = document.getElementById('form-qrcode-input') as HTMLInputElement | null;
-          if (qrcodeInput) qrcodeInput.value = qrValue;
+          updateFormTotals();
         }
 
         closeQrScanner();
@@ -562,6 +895,7 @@ export default function DashboardPage() {
             <div className="header-left">
               <button type="button" className="sidebar-toggle-btn" onClick={() => setSidebarOpen((prev) => !prev)}>
                 <i className="fa-solid fa-bars" />
+                <span className="sidebar-toggle-text">Menu</span>
               </button>
               <h2 className="workspace-title">{renderHeaderTitle()}</h2>
             </div>
@@ -761,19 +1095,24 @@ export default function DashboardPage() {
                           <label htmlFor="form-challan-vehicle">Vehicle Number</label>
                           <div className="input-with-icon">
                             <i className="fa-solid fa-truck" />
-                            <input list="vehicle-number-options" type="text" id="form-challan-vehicle" placeholder="Select or type vehicle number" />
-                            <datalist id="vehicle-number-options">
+                            <select id="form-challan-vehicle" defaultValue="">
+                              <option value="">Select vehicle number</option>
                               {vehicleOptions.map((vehicle) => (
-                                <option key={vehicle} value={vehicle} />
+                                <option key={vehicle} value={vehicle}>{vehicle}</option>
                               ))}
-                            </datalist>
+                            </select>
                           </div>
                         </div>
                         <div className="input-group">
                           <label htmlFor="form-challan-driver">Driver Name</label>
                           <div className="input-with-icon">
                             <i className="fa-solid fa-user" />
-                            <input type="text" id="form-challan-driver" placeholder="e.g. Ram Singh Choudhary" />
+                            <select id="form-challan-driver" defaultValue="">
+                              <option value="">Select driver name</option>
+                              {driverOptions.map((driver) => (
+                                <option key={driver} value={driver}>{driver}</option>
+                              ))}
+                            </select>
                           </div>
                         </div>
                       </div>
@@ -784,13 +1123,6 @@ export default function DashboardPage() {
                           <div className="input-with-icon">
                             <i className="fa-solid fa-calendar" />
                             <input type="date" id="form-challan-date" required />
-                          </div>
-                        </div>
-                        <div className="input-group">
-                          <label htmlFor="form-qrcode-input">Scan Challan QR</label>
-                          <div className="input-with-icon">
-                            <i className="fa-solid fa-qrcode" />
-                            <input type="text" id="form-qrcode-input" placeholder="Click to scan QR or paste code" />
                           </div>
                         </div>
                       </div>
@@ -816,10 +1148,6 @@ export default function DashboardPage() {
                         <div className="calc-box">
                           <span className="calc-label">Total Bags</span>
                           <span className="calc-val" id="form-total-bags-display">0</span>
-                        </div>
-                        <div className="calc-box">
-                          <span className="calc-label">Total Amount</span>
-                          <span className="calc-val accent-val" id="form-amount-display">₹ 0</span>
                         </div>
                       </div>
 
@@ -946,12 +1274,372 @@ export default function DashboardPage() {
               </div>
             </section>
             <section className={activeTab === 'vehicle' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
-              <h3>Vehicle Profiles</h3>
-              <p>View and manage the fleet profile list, registrations and vehicle details here.</p>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Registered Vehicles</span>
+                      <h3>{vehicleStats.totalVehicles}</h3>
+                    </div>
+                    <div className="card-icon blue-bg"><i className="fa-solid fa-truck" /></div>
+                  </div>
+                  <div className="card-footer-desc">Active Fleet Profiles</div>
+                </div>
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Expiring Documents</span>
+                      <h3>{vehicleStats.expiringAlerts}</h3>
+                    </div>
+                    <div className="card-icon orange-bg"><i className="fa-solid fa-triangle-exclamation" /></div>
+                  </div>
+                  <div className="card-footer-desc">Expiring in 30 days</div>
+                </div>
+              </div>
+
+              <div className="workspace-grid">
+                <div className="workspace-table-panel">
+                  <div className="panel-header">
+                    <h3>Vehicle Profile Registry</h3>
+                    <div className="filter-row">
+                      <div className="search-box">
+                        <i className="fa-solid fa-magnifying-glass" />
+                        <input
+                          type="text"
+                          value={vehicleSearch}
+                          onChange={(e) => setVehicleSearch(e.target.value)}
+                          placeholder="Search Vehicle / Owner / Type..."
+                        />
+                      </div>
+                      <div className="month-filter">
+                        <select value={vehicleFilter} onChange={(e) => setVehicleFilter(e.target.value as 'all' | 'expiring')}>
+                          <option value="all">All Vehicles</option>
+                          <option value="expiring">Expiring Soon</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {vehicleLoading ? (
+                    <div className="table-spinner">
+                      <i className="fa-solid fa-circle-notch fa-spin" /> Retrieving vehicle profiles...
+                    </div>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="dash-table">
+                        <thead>
+                          <tr>
+                            <th>Vehicle Number</th>
+                            <th>Type</th>
+                            <th>Owner</th>
+                            <th>Road Tax</th>
+                            <th>Insurance</th>
+                            <th>PUC</th>
+                            <th>Fitness</th>
+                            <th>Permit</th>
+                            <th className="text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredVehicleProfiles.map((vehicle) => (
+                            <tr key={vehicle.id}>
+                              <td>{vehicle.vehicleNumber}</td>
+                              <td>{vehicle.vehicleType}</td>
+                              <td>{vehicle.ownerName}</td>
+                              <td>{vehicle.roadTaxExpiry || '-'}</td>
+                              <td>{vehicle.insuranceExpiry || '-'}</td>
+                              <td>{vehicle.pucExpiry || '-'}</td>
+                              <td>{vehicle.fitnessExpiry || '-'}</td>
+                              <td>{vehicle.permitExpiry || '-'}</td>
+                              <td className="text-center">
+                                <div className="actions-cell">
+                                  <button type="button" className="btn-icon view-btn" title="View"><i className="fa-solid fa-eye" /></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  <div className={`table-empty-state${!vehicleLoading && filteredVehicleProfiles.length === 0 ? '' : ' hidden'}`}>
+                    <i className="fa-solid fa-truck-field" />
+                    <p>No vehicle profiles found matching your filters.</p>
+                  </div>
+                </div>
+
+                <div className="workspace-form-panel">
+                  <div className="form-card">
+                    <h3><i className="fa-solid fa-truck" /> Add Vehicle Profile</h3>
+                    <p className="form-panel-subtitle">Register a vehicle and maintain expiry reminders for transport compliance.</p>
+                    <div className={`form-feedback-toast${formToast ? '' : ' hidden'}`}>
+                      {formToast}
+                    </div>
+
+                    <form onSubmit={handleVehicleProfileSubmit}>
+                      <div className="input-group">
+                        <label htmlFor="form-vehicle-number">Vehicle Number</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-hashtag" />
+                          <input type="text" id="form-vehicle-number" required placeholder="e.g. RJ-14-GD-8921" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-vehicle-type">Vehicle Type</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-car-side" />
+                          <input type="text" id="form-vehicle-type" required placeholder="e.g. Tractor Trailer" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-vehicle-owner">Owner Name</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-user" />
+                          <input type="text" id="form-vehicle-owner" required placeholder="e.g. Krishna Transport" />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="input-group">
+                          <label htmlFor="form-roadtax-expiry">Road Tax Expiry</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-calendar-days" />
+                            <input type="date" id="form-roadtax-expiry" />
+                          </div>
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="form-insurance-expiry">Insurance Expiry</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-shield" />
+                            <input type="date" id="form-insurance-expiry" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="input-group">
+                          <label htmlFor="form-puc-expiry">PUC Expiry</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-leaf" />
+                            <input type="date" id="form-puc-expiry" />
+                          </div>
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="form-fitness-expiry">Fitness Expiry</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-cogs" />
+                            <input type="date" id="form-fitness-expiry" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-permit-expiry">Permit Expiry</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-file-signature" />
+                          <input type="date" id="form-permit-expiry" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-vehicle-remarks">Remarks</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-comment-dots" />
+                          <input type="text" id="form-vehicle-remarks" placeholder="e.g. Inter-state permit valid" />
+                        </div>
+                      </div>
+
+                      <div className="form-actions-row">
+                        <button type="submit" className="btn btn-primary">
+                          <i className="fa-solid fa-circle-check" /> Save Vehicle
+                        </button>
+                        <button type="button" className="btn btn-secondary" onClick={() => setFormToast(null)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </section>
             <section className={activeTab === 'driver-profile' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
-              <h3>Driver Profiles</h3>
-              <p>Manage driver records, licenses, and profile information from this module.</p>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Driver Records</span>
+                      <h3>{driverStats.totalDrivers}</h3>
+                    </div>
+                    <div className="card-icon blue-bg"><i className="fa-solid fa-id-card-clip" /></div>
+                  </div>
+                  <div className="card-footer-desc">Driver profile count</div>
+                </div>
+                <div className="stat-card">
+                  <div className="card-inner">
+                    <div>
+                      <span className="card-title">Assigned Drivers</span>
+                      <h3>{driverStats.assignedDrivers}</h3>
+                    </div>
+                    <div className="card-icon green-bg"><i className="fa-solid fa-user-check" /></div>
+                  </div>
+                  <div className="card-footer-desc">Drivers with vehicles</div>
+                </div>
+              </div>
+
+              <div className="workspace-grid">
+                <div className="workspace-table-panel">
+                  <div className="panel-header">
+                    <h3>Driver Profile Ledger</h3>
+                    <div className="filter-row">
+                      <div className="search-box">
+                        <i className="fa-solid fa-magnifying-glass" />
+                        <input
+                          type="text"
+                          value={driverProfileSearch}
+                          onChange={(e) => setDriverProfileSearch(e.target.value)}
+                          placeholder="Search Driver / Mobile / Vehicle..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {driverProfileLoading ? (
+                    <div className="table-spinner">
+                      <i className="fa-solid fa-circle-notch fa-spin" /> Retrieving driver profiles...
+                    </div>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="dash-table">
+                        <thead>
+                          <tr>
+                            <th>Driver Name</th>
+                            <th>Mobile</th>
+                            <th>Vehicle</th>
+                            <th>License</th>
+                            <th>Joining</th>
+                            <th className="text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredDriverProfiles.map((driver) => (
+                            <tr key={driver.id}>
+                              <td>{driver.driverName}</td>
+                              <td>{driver.mobileNumber}</td>
+                              <td>{driver.assignedVehicleNumber || '-'}</td>
+                              <td>{driver.licenseNumber || '-'}</td>
+                              <td>{driver.joiningDate || '-'}</td>
+                              <td className="text-center">
+                                <div className="actions-cell">
+                                  <button type="button" className="btn-icon view-btn" title="View"><i className="fa-solid fa-eye" /></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  <div className={`table-empty-state${!driverProfileLoading && filteredDriverProfiles.length === 0 ? '' : ' hidden'}`}>
+                    <i className="fa-solid fa-id-card" />
+                    <p>No driver profiles found matching your search.</p>
+                  </div>
+                </div>
+
+                <div className="workspace-form-panel">
+                  <div className="form-card">
+                    <h3><i className="fa-solid fa-id-card-clip" /> Add Driver Profile</h3>
+                    <p className="form-panel-subtitle">Record a new driver profile to assign vehicles and maintain compliance.</p>
+                    <div className={`form-feedback-toast${formToast ? '' : ' hidden'}`}>
+                      {formToast}
+                    </div>
+
+                    <form onSubmit={handleDriverProfileSubmit}>
+                      <div className="input-group">
+                        <label htmlFor="form-driver-profile-name">Driver Name</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-user" />
+                          <input type="text" id="form-driver-profile-name" required placeholder="e.g. Ram Singh Choudhary" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-driver-profile-mobile">Mobile Number</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-phone" />
+                          <input type="tel" id="form-driver-profile-mobile" required placeholder="e.g. 9876543210" pattern="[0-9]{10}" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-driver-profile-vehicle">Assigned Vehicle</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-truck" />
+                          <input list="driver-vehicle-options" type="text" id="form-driver-profile-vehicle" placeholder="Select or type vehicle number" />
+                          <datalist id="driver-vehicle-options">
+                            {vehicleOptions.map((vehicle) => (
+                              <option key={vehicle} value={vehicle} />
+                            ))}
+                          </datalist>
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-driver-profile-address">Address</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-location-dot" />
+                          <input type="text" id="form-driver-profile-address" placeholder="e.g. Sikar, Rajasthan" />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="input-group">
+                          <label htmlFor="form-driver-profile-aadhaar">Aadhaar Number</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-id-card" />
+                            <input type="text" id="form-driver-profile-aadhaar" placeholder="XXXX-XXXX-XXXX" />
+                          </div>
+                        </div>
+                        <div className="input-group">
+                          <label htmlFor="form-driver-profile-license">License Number</label>
+                          <div className="input-with-icon">
+                            <i className="fa-solid fa-id-badge" />
+                            <input type="text" id="form-driver-profile-license" placeholder="e.g. RJ14XXXXXX" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-driver-profile-joining">Joining Date</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-calendar" />
+                          <input type="date" id="form-driver-profile-joining" />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="form-driver-profile-remarks">Remarks</label>
+                        <div className="input-with-icon">
+                          <i className="fa-solid fa-comment-dots" />
+                          <input type="text" id="form-driver-profile-remarks" placeholder="e.g. Experienced long-haul driver" />
+                        </div>
+                      </div>
+
+                      <div className="form-actions-row">
+                        <button type="submit" className="btn btn-primary">
+                          <i className="fa-solid fa-circle-check" /> Save Driver
+                        </button>
+                        <button type="button" className="btn btn-secondary" onClick={() => setFormToast(null)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </section>
             <section className={activeTab === 'driver' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
               <div className="stats-grid">
