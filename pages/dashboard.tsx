@@ -1,12 +1,52 @@
 import Link from 'next/link';
 import Head from 'next/head';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, FormEvent } from 'react';
+
+type Challan = {
+  id: string;
+  challanNo: string;
+  dealerName: string;
+  vehicleNumber?: string | null;
+  driverName?: string | null;
+  date: string;
+  riceBags: number;
+  wheatBags: number;
+  totalBags: number;
+  ratePerBag: number;
+  calculatedAmount: number;
+  scannedData?: string | null;
+};
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'challan' | 'vehicle' | 'driver-profile' | 'driver' | 'mechanic' | 'diesel'>('challan');
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [qrScannerError, setQrScannerError] = useState<string | null>(null);
+  const [scannerStream, setScannerStream] = useState<MediaStream | null>(null);
+  const [challans, setChallans] = useState<Challan[]>([]);
+  const [challanLoading, setChallanLoading] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalChallans: 0,
+    riceBags: 0,
+    wheatBags: 0,
+    totalBags: 0,
+    totalAmount: 0,
+  });
+  const [formToast, setFormToast] = useState<string | null>(null);
+  const [reportMonth, setReportMonth] = useState(() => {
+    const today = new Date();
+    return String(today.getMonth() + 1).padStart(2, '0');
+  });
+  const [reportYear, setReportYear] = useState(() => String(new Date().getFullYear()));
+  const [reportCompiled, setReportCompiled] = useState(false);
+  const [reportResults, setReportResults] = useState<Challan[]>([]);
+  const [reportSummary, setReportSummary] = useState({
+    totalChallans: 0,
+    riceBags: 0,
+    wheatBags: 0,
+    totalBags: 0,
+    totalAmount: 0,
+  });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -17,6 +57,222 @@ export default function DashboardPage() {
     setActiveTab(tab);
     setSidebarOpen(false);
   };
+
+  const getAuthToken = () => (typeof window !== 'undefined' ? window.localStorage.getItem('authToken') : null);
+
+  const logout = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.clear();
+    window.location.href = '/login';
+  };
+
+  const formatDate = (rawDate: string) => {
+    const date = new Date(rawDate);
+    if (Number.isNaN(date.getTime())) return rawDate;
+    return date.toLocaleDateString('en-GB');
+  };
+
+  const calculateStats = (list: Challan[]) => {
+    const totalChallans = list.length;
+    const riceBags = list.reduce((sum, item) => sum + (item.riceBags || 0), 0);
+    const wheatBags = list.reduce((sum, item) => sum + (item.wheatBags || 0), 0);
+    const totalBags = riceBags + wheatBags;
+    const totalAmount = list.reduce((sum, item) => sum + (item.calculatedAmount || 0), 0);
+    return { totalChallans, riceBags, wheatBags, totalBags, totalAmount };
+  };
+
+  const updateFormTotals = () => {
+    const rice = Number((document.getElementById('form-rice-bags') as HTMLInputElement | null)?.value || 0);
+    const wheat = Number((document.getElementById('form-wheat-bags') as HTMLInputElement | null)?.value || 0);
+    const totalBags = rice + wheat;
+    const totalAmount = totalBags * 10;
+    const bagsDisplay = document.getElementById('form-total-bags-display');
+    const amountDisplay = document.getElementById('form-amount-display');
+    if (bagsDisplay) bagsDisplay.textContent = totalBags.toLocaleString();
+    if (amountDisplay) amountDisplay.textContent = `₹ ${totalAmount.toLocaleString('en-IN')}`;
+  };
+
+  const setDefaultChallanDate = () => {
+    if (typeof window === 'undefined') return;
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateInput = document.getElementById('form-challan-date') as HTMLInputElement | null;
+    if (dateInput) dateInput.value = `${yyyy}-${mm}-${dd}`;
+  };
+
+  const loadChallans = async () => {
+    setChallanLoading(true);
+    setFormToast(null);
+
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        logout();
+        return;
+      }
+
+      const response = await fetch('/api/challans', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          return;
+        }
+        throw new Error('Failed to load challan records.');
+      }
+
+      const data = await response.json();
+      const loadedChallans: Challan[] = Array.isArray(data)
+        ? data
+            .map((item: any) => ({
+              id: String(item.id),
+              challanNo: item.challanNo || '',
+              dealerName: item.dealerName || '',
+              vehicleNumber: item.vehicleNumber || null,
+              driverName: item.driverName || null,
+              date: item.date || '',
+              riceBags: Number(item.riceBags || 0),
+              wheatBags: Number(item.wheatBags || 0),
+              totalBags: Number(item.totalBags || (Number(item.riceBags || 0) + Number(item.wheatBags || 0))),
+              ratePerBag: Number(item.ratePerBag || 10),
+              calculatedAmount: Number(item.calculatedAmount || ((Number(item.riceBags || 0) + Number(item.wheatBags || 0)) * Number(item.ratePerBag || 10))),
+              scannedData: item.scannedData || null,
+            }))
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        : [];
+
+      setChallans(loadedChallans);
+      setDashboardStats(calculateStats(loadedChallans));
+    } catch (error) {
+      console.error('Error loading challans:', error);
+      setFormToast('Unable to load challan records. Please try again later.');
+    } finally {
+      setChallanLoading(false);
+    }
+  };
+
+  const compileLedger = () => {
+    const filtered = challans.filter((item) => {
+      const date = new Date(item.date);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear());
+      return month === reportMonth && year === reportYear;
+    });
+
+    setReportResults(filtered);
+    setReportSummary(calculateStats(filtered));
+    setReportCompiled(true);
+  };
+
+  const handleChallanFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormToast(null);
+
+    const form = event.currentTarget;
+    const challanNo = (form.querySelector('#form-challan-no') as HTMLInputElement | null)?.value.trim() || '';
+    const dealerName = (form.querySelector('#form-dealer-name') as HTMLInputElement | null)?.value.trim() || '';
+    const vehicleNumber = (form.querySelector('#form-challan-vehicle') as HTMLInputElement | null)?.value.trim() || '';
+    const driverName = (form.querySelector('#form-challan-driver') as HTMLInputElement | null)?.value.trim() || '';
+    const date = (form.querySelector('#form-challan-date') as HTMLInputElement | null)?.value || '';
+    const qrData = (form.querySelector('#form-qrcode-input') as HTMLInputElement | null)?.value.trim() || '';
+    const riceBags = Number((form.querySelector('#form-rice-bags') as HTMLInputElement | null)?.value || 0);
+    const wheatBags = Number((form.querySelector('#form-wheat-bags') as HTMLInputElement | null)?.value || 0);
+    const ratePerBag = 10;
+
+    if (!challanNo || !dealerName || !date) {
+      setFormToast('Challan number, dealer name, and date are required.');
+      return;
+    }
+
+    const body = {
+      challanNo,
+      dealerName,
+      vehicleNumber,
+      driverName,
+      date,
+      riceBags,
+      wheatBags,
+      ratePerBag,
+      scannedData: qrData,
+    };
+
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        logout();
+        return;
+      }
+
+      const response = await fetch('/api/challans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          return;
+        }
+        const errorData = await response.json().catch(() => null);
+        const message = errorData?.error || 'Unable to save record. Please try again.';
+        setFormToast(message);
+        return;
+      }
+
+      const created = await response.json();
+      const newChallan: Challan = {
+        id: String(created.id),
+        challanNo: created.challanNo || challanNo,
+        dealerName: created.dealerName || dealerName,
+        vehicleNumber: created.vehicleNumber || vehicleNumber,
+        driverName: created.driverName || driverName,
+        date: created.date || date,
+        riceBags: Number(created.riceBags ?? riceBags),
+        wheatBags: Number(created.wheatBags ?? wheatBags),
+        totalBags: Number(created.totalBags ?? riceBags + wheatBags),
+        ratePerBag: Number(created.ratePerBag ?? ratePerBag),
+        calculatedAmount: Number(created.calculatedAmount ?? ((riceBags + wheatBags) * ratePerBag)),
+        scannedData: created.scannedData || qrData,
+      };
+
+      setChallans((current) => {
+        const next = [newChallan, ...current];
+        setDashboardStats(calculateStats(next));
+        return next;
+      });
+      setFormToast('Challan saved successfully.');
+      form.reset();
+      setDefaultChallanDate();
+      updateFormTotals();
+    } catch (error) {
+      console.error('Error submitting challan:', error);
+      setFormToast('Unable to save challan. Please try again later.');
+    }
+  };
+
+  useEffect(() => {
+    setDefaultChallanDate();
+    if (typeof window !== 'undefined') {
+      const today = new Date();
+      setReportMonth(String(today.getMonth() + 1).padStart(2, '0'));
+      setReportYear(String(today.getFullYear()));
+    }
+    loadChallans();
+  }, []);
+
+  useEffect(() => {
+    if (reportCompiled) {
+      compileLedger();
+    }
+  }, [challans]);
 
   const closeQrScanner = () => {
     if (animationFrameRef.current) {
@@ -33,6 +289,7 @@ export default function DashboardPage() {
       videoRef.current.srcObject = null;
     }
 
+    setScannerStream(null);
     setQrScannerOpen(false);
     setQrScannerError(null);
   };
@@ -111,21 +368,24 @@ export default function DashboardPage() {
     }
 
     setQrScannerError(null);
-    setQrScannerOpen(true);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       streamRef.current = stream;
+      setScannerStream(stream);
+      setQrScannerOpen(true);
     } catch (err) {
       console.error('QR camera error:', err);
       setQrScannerError('Unable to access the camera. Please allow camera access in your browser settings.');
+      setScannerStream(null);
       setQrScannerOpen(false);
     }
   };
 
   useEffect(() => {
-    if (qrScannerOpen && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current;
+    if (qrScannerOpen && scannerStream && videoRef.current) {
+      videoRef.current.srcObject = scannerStream;
+      videoRef.current.setAttribute('playsinline', 'true');
       videoRef.current
         .play()
         .then(() => {
@@ -139,9 +399,11 @@ export default function DashboardPage() {
 
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop());
+      if (scannerStream) {
+        scannerStream.getTracks().forEach((track) => track.stop());
+      }
     };
-  }, [qrScannerOpen]);
+  }, [qrScannerOpen, scannerStream]);
 
   const renderHeaderTitle = () => {
     switch (activeTab) {
@@ -224,7 +486,7 @@ export default function DashboardPage() {
                   <div className="card-inner">
                     <div>
                       <span className="card-title">Total Challans</span>
-                      <h3 id="stat-total-challans">0</h3>
+                      <h3 id="stat-total-challans">{dashboardStats.totalChallans}</h3>
                     </div>
                     <div className="card-icon blue-bg"><i className="fa-solid fa-file-lines" /></div>
                   </div>
@@ -234,7 +496,7 @@ export default function DashboardPage() {
                   <div className="card-inner">
                     <div>
                       <span className="card-title">Rice Bags</span>
-                      <h3 id="stat-rice-bags">0</h3>
+                      <h3 id="stat-rice-bags">{dashboardStats.riceBags}</h3>
                     </div>
                     <div className="card-icon orange-bg"><i className="fa-solid fa-bowl-rice" /></div>
                   </div>
@@ -244,7 +506,7 @@ export default function DashboardPage() {
                   <div className="card-inner">
                     <div>
                       <span className="card-title">Wheat Bags</span>
-                      <h3 id="stat-wheat-bags">0</h3>
+                      <h3 id="stat-wheat-bags">{dashboardStats.wheatBags}</h3>
                     </div>
                     <div className="card-icon blue-bg"><i className="fa-solid fa-wheat-awn" /></div>
                   </div>
@@ -254,7 +516,7 @@ export default function DashboardPage() {
                   <div className="card-inner">
                     <div>
                       <span className="card-title">Total Bags</span>
-                      <h3 id="stat-total-bags">0</h3>
+                      <h3 id="stat-total-bags">{dashboardStats.totalBags}</h3>
                     </div>
                     <div className="card-icon green-bg"><i className="fa-solid fa-boxes-stacked" /></div>
                   </div>
@@ -264,7 +526,7 @@ export default function DashboardPage() {
                   <div className="card-inner">
                     <div>
                       <span className="card-title">Total Amount</span>
-                      <h3 id="stat-total-amount">₹ 0</h3>
+                      <h3 id="stat-total-amount">₹ {dashboardStats.totalAmount.toLocaleString('en-IN')}</h3>
                     </div>
                     <div className="card-icon green-bg"><i className="fa-solid fa-indian-rupee-sign" /></div>
                   </div>
@@ -289,7 +551,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div id="challan-table-loader" className="table-spinner">
+                  <div id="challan-table-loader" className={challanLoading ? 'table-spinner' : 'table-spinner hidden'}>
                     <i className="fa-solid fa-circle-notch fa-spin" /> Retrieving Records...
                   </div>
 
@@ -310,11 +572,33 @@ export default function DashboardPage() {
                           <th className="text-center">Actions</th>
                         </tr>
                       </thead>
-                      <tbody id="challan-table-rows"></tbody>
+                      <tbody id="challan-table-rows">
+                        {challans.map((c) => (
+                          <tr key={c.id} id={`row-${c.id}`}>
+                            <td className="font-bold text-white">{c.challanNo}</td>
+                            <td>{c.dealerName}</td>
+                            <td>{c.vehicleNumber || '-'}</td>
+                            <td>{c.driverName || '-'}</td>
+                            <td>{formatDate(c.date)}</td>
+                            <td className="text-right">{c.riceBags.toLocaleString()}</td>
+                            <td className="text-right">{c.wheatBags.toLocaleString()}</td>
+                            <td className="text-right font-bold text-white">{c.totalBags.toLocaleString()}</td>
+                            <td className="text-right">₹ {c.ratePerBag}</td>
+                            <td className="text-right font-bold text-white">₹ {c.calculatedAmount.toLocaleString('en-IN')}</td>
+                            <td className="text-center">
+                              <div className="actions-cell">
+                                <button type="button" className="btn-icon view-btn" title="View Bill"><i className="fa-solid fa-eye"></i></button>
+                                <button type="button" className="btn-icon edit-btn" title="Edit Log"><i className="fa-solid fa-pen-to-square"></i></button>
+                                <button type="button" className="btn-icon delete-btn" title="Delete Log"><i className="fa-solid fa-trash-can"></i></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   </div>
 
-                  <div className="table-empty-state hidden" id="challan-table-empty">
+                  <div className={`table-empty-state${!challanLoading && challans.length === 0 ? '' : ' hidden'}`} id="challan-table-empty">
                     <i className="fa-solid fa-receipt" />
                     <p>No challan records found matching your filters.</p>
                   </div>
@@ -324,8 +608,10 @@ export default function DashboardPage() {
                   <div className="form-card">
                     <h3 id="form-panel-title"><i className="fa-solid fa-folder-plus" /> Add New Challan Entry</h3>
                     <p className="form-panel-subtitle">Create a cargo consignment log. Amount is calculated automatically.</p>
-                    <div className="form-feedback-toast hidden" id="form-toast"></div>
-                    <form id="challan-entry-form">
+                    <div className={`form-feedback-toast${formToast ? '' : ' hidden'}`} id="form-toast">
+                      {formToast}
+                    </div>
+                    <form id="challan-entry-form" onSubmit={handleChallanFormSubmit}>
                       <input type="hidden" id="form-challan-id" value="" />
 
                       <div className="input-group">
@@ -383,14 +669,14 @@ export default function DashboardPage() {
                           <label htmlFor="form-rice-bags">Rice Bags Qty</label>
                           <div className="input-with-icon">
                             <i className="fa-solid fa-bowl-rice" />
-                            <input type="number" id="form-rice-bags" required defaultValue={0} min={0} />
+                            <input type="number" id="form-rice-bags" required defaultValue={0} min={0} onInput={updateFormTotals} />
                           </div>
                         </div>
                         <div className="input-group">
                           <label htmlFor="form-wheat-bags">Wheat Bags Qty</label>
                           <div className="input-with-icon">
                             <i className="fa-solid fa-wheat-awn" />
-                            <input type="number" id="form-wheat-bags" required defaultValue={0} min={0} />
+                            <input type="number" id="form-wheat-bags" required defaultValue={0} min={0} onInput={updateFormTotals} />
                           </div>
                         </div>
                       </div>
@@ -429,7 +715,7 @@ export default function DashboardPage() {
                   <div className="r-filters">
                     <div className="input-group-inline">
                       <label htmlFor="report-select-month">Select Month</label>
-                      <select id="report-select-month" defaultValue="06">
+                      <select id="report-select-month" value={reportMonth} onChange={(e) => setReportMonth(e.target.value)}>
                         <option value="01">January</option>
                         <option value="02">February</option>
                         <option value="03">March</option>
@@ -446,7 +732,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="input-group-inline">
                       <label htmlFor="report-select-year">Select Year</label>
-                      <select id="report-select-year" defaultValue="2026">
+                      <select id="report-select-year" value={reportYear} onChange={(e) => setReportYear(e.target.value)}>
                         <option value="2024">2024</option>
                         <option value="2025">2025</option>
                         <option value="2026">2026</option>
@@ -454,7 +740,7 @@ export default function DashboardPage() {
                         <option value="2028">2028</option>
                       </select>
                     </div>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={compileLedger}>
                       <i className="fa-solid fa-filter" /> Compile Ledger
                     </button>
                   </div>
@@ -469,50 +755,63 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="report-results-grid hidden" id="report-results-container">
-                  <div className="report-summary-stats">
-                    <div className="r-stat">
-                      <span className="r-label">Total Challans</span>
-                      <span className="r-val" id="report-total-challans">0</span>
+                {reportCompiled ? (
+                  <div className="report-results-grid" id="report-results-container">
+                    <div className="report-summary-stats">
+                      <div className="r-stat">
+                        <span className="r-label">Total Challans</span>
+                        <span className="r-val" id="report-total-challans">{reportSummary.totalChallans}</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Total Rice Bags</span>
+                        <span className="r-val" id="report-rice-total">{reportSummary.riceBags}</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Total Wheat Bags</span>
+                        <span className="r-val" id="report-wheat-total">{reportSummary.wheatBags}</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Total Bags</span>
+                        <span className="r-val" id="report-total-bags">{reportSummary.totalBags}</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Total Amount</span>
+                        <span className="r-val" id="report-total-amount">₹ {reportSummary.totalAmount.toLocaleString('en-IN')}</span>
+                      </div>
                     </div>
-                    <div className="r-stat">
-                      <span className="r-label">Total Rice Bags</span>
-                      <span className="r-val" id="report-rice-total">0</span>
-                    </div>
-                    <div className="r-stat">
-                      <span className="r-label">Total Wheat Bags</span>
-                      <span className="r-val" id="report-wheat-total">0</span>
-                    </div>
-                    <div className="r-stat">
-                      <span className="r-label">Total Bags</span>
-                      <span className="r-val" id="report-total-bags">0</span>
-                    </div>
-                    <div className="r-stat">
-                      <span className="r-label">Total Amount</span>
-                      <span className="r-val" id="report-total-amount">₹ 0</span>
+                    <div className="table-responsive">
+                      <table className="dash-table min-table">
+                        <thead>
+                          <tr>
+                            <th>Challan No.</th>
+                            <th>Date</th>
+                            <th>Rice Bags</th>
+                            <th>Wheat Bags</th>
+                            <th>Total Bags</th>
+                            <th className="text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody id="report-table-rows">
+                          {reportResults.map((item) => (
+                            <tr key={item.id}>
+                              <td>{item.challanNo}</td>
+                              <td>{formatDate(item.date)}</td>
+                              <td>{item.riceBags.toLocaleString()}</td>
+                              <td>{item.wheatBags.toLocaleString()}</td>
+                              <td>{item.totalBags.toLocaleString()}</td>
+                              <td className="text-right">₹ {item.calculatedAmount.toLocaleString('en-IN')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                  <div className="table-responsive">
-                    <table className="dash-table min-table">
-                      <thead>
-                        <tr>
-                          <th>Challan No.</th>
-                          <th>Date</th>
-                          <th>Rice Bags</th>
-                          <th>Wheat Bags</th>
-                          <th>Total Bags</th>
-                          <th className="text-right">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody id="report-table-rows"></tbody>
-                    </table>
+                ) : (
+                  <div className="report-empty-state" id="report-empty-container">
+                    <i className="fa-solid fa-calculator" />
+                    <p>Select Month and Year above and click "Compile Ledger" to review monthly totals.</p>
                   </div>
-                </div>
-
-                <div className="report-empty-state" id="report-empty-container">
-                  <i className="fa-solid fa-calculator" />
-                  <p>Select Month and Year above and click "Compile Ledger" to review monthly totals.</p>
-                </div>
+                )}
               </div>
             </section>
             <section className={activeTab === 'vehicle' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
