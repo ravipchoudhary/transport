@@ -95,25 +95,25 @@ app.get('/api/challans', authenticateToken, asyncHandler(async (req, res) => {
 }));
 
 app.post('/api/challans', authenticateToken, asyncHandler(async (req, res) => {
-  const { challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
+  const { challanNo, dealerName, date, bags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
 
   if (!challanNo || !dealerName || !date) {
     return res.status(400).json({ error: 'Challan number, dealer name, and date are required.' });
   }
 
-  const result = await db.addChallan(req.user.id, challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData);
+  const result = await db.addChallan(req.user.id, challanNo, dealerName, date, bags, ratePerBag, vehicleNumber, driverName, scannedData);
   res.status(201).json(result.challan);
 }));
 
 app.put('/api/challans/:id', authenticateToken, asyncHandler(async (req, res) => {
   const challanId = req.params.id;
-  const { challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
+  const { challanNo, dealerName, date, bags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
 
   if (!challanNo || !dealerName || !date) {
     return res.status(400).json({ error: 'Challan number, dealer name, and date are required for updates.' });
   }
 
-  const result = await db.updateChallan(req.user.id, challanId, challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData);
+  const result = await db.updateChallan(req.user.id, challanId, challanNo, dealerName, date, bags, ratePerBag, vehicleNumber, driverName, scannedData);
   if (!result.success) {
     return res.status(404).json({ error: result.message });
   }

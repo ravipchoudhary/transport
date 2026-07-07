@@ -25,9 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
+    const { challanNo, dealerName, date, totalBags, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
     if (!challanNo || !dealerName || !date) return res.status(400).json({ error: 'Challan number, dealer name, and date are required.' });
-    const result = await addChallan(user.id, challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData);
+    const result = await addChallan(user.id, challanNo, dealerName, date, riceBags, wheatBags, totalBags, ratePerBag, vehicleNumber, driverName, scannedData);
     return res.status(201).json(result.challan);
   }
 

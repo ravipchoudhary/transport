@@ -63,7 +63,13 @@ export async function loginUser(emailOrMobile: string, password: string) {
 
   return {
     success: true,
-    user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, role: user.role }
+    user: {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      mobile: user.mobile,
+      role: user.role,
+    }
   };
 }
 
@@ -71,31 +77,29 @@ export async function getChallans(userId: string) {
   return prisma.challan.findMany({ where: { userId }, orderBy: { date: 'desc' } });
 }
 
-export async function addChallan(userId: string, challanNo: string, dealerName: string, date: string, riceBags: any, wheatBags: any, ratePerBag: any, vehicleNumber?: string, driverName?: string, scannedData?: string | null) {
-  const rice = parseInt(riceBags) || 0;
-  const wheat = parseInt(wheatBags) || 0;
-  const totalBags = rice + wheat;
+export async function addChallan(userId: string, challanNo: string, dealerName: string, date: string, riceBags: any, wheatBags: any, totalBags: any, ratePerBag: any, vehicleNumber?: string, driverName?: string, scannedData?: string | null) {
+  const riceCount = riceBags !== undefined && riceBags !== null ? Number(riceBags) || 0 : 0;
+  const wheatCount = wheatBags !== undefined && wheatBags !== null ? Number(wheatBags) || 0 : 0;
+  const bagCount = totalBags !== undefined && totalBags !== null ? Number(totalBags) || riceCount + wheatCount : riceCount + wheatCount;
   const rate = parseFloat(ratePerBag) || 10;
-  const calculatedAmount = totalBags * rate;
+  const calculatedAmount = bagCount * rate;
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : '';
-
-  const challan = await prisma.challan.create({ data: { challanNo, dealerName, date: dateObj ?? new Date(), riceBags: rice, wheatBags: wheat, totalBags, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || '', driverName: driverName || '', scannedData: scannedData || null, user: { connect: { id: userId } } } });
+  const challan = await prisma.challan.create({ data: { challanNo, dealerName, date: dateObj ?? new Date(), riceBags: riceCount, wheatBags: wheatCount, totalBags: bagCount, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || '', driverName: driverName || '', scannedData: scannedData || null, user: { connect: { id: userId } } } });
   return { success: true, challan };
 }
 
-export async function updateChallan(userId: string, challanId: string, challanNo: string, dealerName: string, date: string, riceBags: any, wheatBags: any, ratePerBag: any, vehicleNumber?: string, driverName?: string, scannedData?: string | null) {
+export async function updateChallan(userId: string, challanId: string, challanNo: string, dealerName: string, date: string, riceBags: any, wheatBags: any, totalBags: any, ratePerBag: any, vehicleNumber?: string, driverName?: string, scannedData?: string | null) {
   const existing = await prisma.challan.findFirst({ where: { id: challanId, userId } });
   if (!existing) return { success: false, message: 'Challan not found or unauthorized.' };
-  const rice = parseInt(riceBags) || 0;
-  const wheat = parseInt(wheatBags) || 0;
-  const totalBags = rice + wheat;
-  const rate = parseFloat(ratePerBag) || 10;
-  const calculatedAmount = totalBags * rate;
+  const riceCount = riceBags !== undefined && riceBags !== null ? Number(riceBags) || 0 : existing.riceBags ?? 0;
+  const wheatCount = wheatBags !== undefined && wheatBags !== null ? Number(wheatBags) || 0 : existing.wheatBags ?? 0;
+  const bagCount = totalBags !== undefined && totalBags !== null ? Number(totalBags) || riceCount + wheatCount : riceCount + wheatCount;
+  const rate = ratePerBag !== undefined && ratePerBag !== null ? parseFloat(ratePerBag) || 10 : existing.ratePerBag;
+  const calculatedAmount = bagCount * rate;
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : existing.month;
-
-  const challan = await prisma.challan.update({ where: { id: challanId }, data: { challanNo, dealerName, date: dateObj ?? existing.date, riceBags: rice, wheatBags: wheat, totalBags, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || '', driverName: driverName || '', scannedData: scannedData || existing.scannedData } });
+  const challan = await prisma.challan.update({ where: { id: challanId }, data: { challanNo, dealerName, date: dateObj ?? existing.date, riceBags: riceCount, wheatBags: wheatCount, totalBags: bagCount, ratePerBag: rate, calculatedAmount, month, vehicleNumber: vehicleNumber || existing.vehicleNumber, driverName: driverName || existing.driverName, scannedData: scannedData !== undefined ? scannedData : existing.scannedData } });
   return { success: true, challan };
 }
 

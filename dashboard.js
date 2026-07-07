@@ -17,8 +17,52 @@ if (!token || !user) {
   window.location.href = "login.html";
 }
 
-// --- DOM Initialization ---
-document.addEventListener("DOMContentLoaded", () => {
+// Shared delete helper with logging and toast
+async function doDeleteApi(path, id) {
+  console.debug('[DBG] doDeleteApi', path, id);
+  showDebugToast(`Deleting ${id}...`);
+  const res = await fetch(path, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) { /* ignore */ }
+  if (!res.ok) {
+    const err = data && (data.error || data.message) ? (data.error || data.message) : `Delete failed (${res.status})`;
+    throw new Error(err);
+  }
+  return data;
+}
+
+function showDebugToast(text) {
+  try {
+    let el = document.getElementById('debug-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'debug-toast';
+      el.style.position = 'fixed';
+      el.style.bottom = '16px';
+      el.style.right = '16px';
+      el.style.background = 'rgba(0,0,0,0.7)';
+      el.style.color = 'white';
+      el.style.padding = '8px 12px';
+      el.style.borderRadius = '6px';
+      el.style.zIndex = 99999;
+      el.style.fontSize = '13px';
+      document.body.appendChild(el);
+    }
+    el.innerText = text;
+    el.style.opacity = '1';
+    el.style.transition = 'opacity 400ms';
+    setTimeout(() => {
+      el.style.opacity = '0';
+    }, 1200);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function initializeDashboard() {
   displayUserProfile();
   startLiveClock();
   initFormDate();
@@ -75,7 +119,60 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
-});
+
+  // Delegated click handler for action buttons (edit/view/delete)
+  document.body.addEventListener('click', (ev) => {
+    const btn = ev.target.closest && ev.target.closest('button.btn-icon');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    if (!action || !id) return;
+
+    console.debug('[DBG] action button clicked', { action, id });
+    showDebugToast(`${action} → ${id}`);
+
+    switch (action) {
+      case 'edit-challan': return triggerEditChallan(id);
+      case 'delete-challan': return triggerDeleteChallan(id);
+      case 'view-challan': return triggerViewChallan(id);
+      case 'edit-diesel': return triggerEditDiesel(id);
+      case 'delete-diesel': return triggerDeleteDiesel(id);
+      case 'edit-mechanic': return triggerEditMechanic(id);
+      case 'delete-mechanic': return triggerDeleteMechanic(id);
+      case 'edit-driver': return triggerEditDriver(id);
+      case 'delete-driver': return triggerDeleteDriver(id);
+      case 'edit-vehicle': return triggerEditVehicle(id);
+      case 'delete-vehicle': return triggerDeleteVehicle(id);
+      case 'edit-driver-profile': return triggerEditDriverProfile(id);
+      case 'delete-driver-profile': return triggerDeleteDriverProfile(id);
+      default: return;
+    }
+  });
+
+  attachActionListeners();
+  const observer = new MutationObserver((mutationsList) => {
+    for (const m of mutationsList) {
+      if (m.addedNodes && m.addedNodes.length) {
+        attachActionListeners();
+        break;
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  try {
+    const totalButtons = document.querySelectorAll('button.btn-icon').length;
+    console.debug('[DBG] dashboard init - action buttons found:', totalButtons);
+    showDebugToast(`Buttons: ${totalButtons}`);
+  } catch (e) {}
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeDashboard);
+} else {
+  initializeDashboard();
+}
 
 // --- Profile & Header ---
 function displayUserProfile() {
@@ -88,6 +185,82 @@ function displayUserProfile() {
   }
 }
 
+  // Attach direct click listeners to buttons to ensure handlers run
+  function attachActionListeners() {
+    try {
+      const buttons = document.querySelectorAll('button.btn-icon');
+      buttons.forEach(btn => {
+        if (btn.dataset.listener === '1') return;
+        btn.dataset.listener = '1';
+        btn.addEventListener('click', (e) => {
+          const action = btn.dataset.action;
+          const id = btn.dataset.id;
+          if (!action || !id) return;
+          console.debug('[DBG] direct action click', { action, id });
+          showDebugToast(`${action} → ${id}`);
+          switch (action) {
+            case 'edit-challan': return triggerEditChallan(id);
+            case 'delete-challan': return triggerDeleteChallan(id);
+            case 'view-challan': return triggerViewChallan(id);
+            case 'edit-diesel': return triggerEditDiesel(id);
+            case 'delete-diesel': return triggerDeleteDiesel(id);
+            case 'edit-mechanic': return triggerEditMechanic(id);
+            case 'delete-mechanic': return triggerDeleteMechanic(id);
+            case 'edit-driver': return triggerEditDriver(id);
+            case 'delete-driver': return triggerDeleteDriver(id);
+            case 'edit-vehicle': return triggerEditVehicle(id);
+            case 'delete-vehicle': return triggerDeleteVehicle(id);
+            case 'edit-driver-profile': return triggerEditDriverProfile(id);
+            case 'delete-driver-profile': return triggerDeleteDriverProfile(id);
+            default: return;
+          }
+        });
+      });
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  // Observe DOM changes to bind listeners for dynamically rendered rows
+  const observer = new MutationObserver((mutationsList) => {
+    for (const m of mutationsList) {
+      if (m.addedNodes && m.addedNodes.length) {
+        attachActionListeners();
+        break;
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // initial bind
+  attachActionListeners();
+
+  // Debug: report number of action buttons found
+  try {
+    const totalButtons = document.querySelectorAll('button.btn-icon').length;
+    console.debug('[DBG] dashboard init - action buttons found:', totalButtons);
+    showDebugToast(`Buttons: ${totalButtons}`);
+  } catch (e) {}
+
+
+// Expose key trigger functions to window for inline onclick attributes
+try {
+  window.triggerDeleteChallan = triggerDeleteChallan;
+  window.triggerEditChallan = triggerEditChallan;
+  window.triggerViewChallan = triggerViewChallan;
+  window.triggerDeleteDriver = triggerDeleteDriver;
+  window.triggerEditDriver = triggerEditDriver;
+  window.triggerDeleteVehicle = triggerDeleteVehicle;
+  window.triggerEditVehicle = triggerEditVehicle;
+  window.triggerDeleteDiesel = triggerDeleteDiesel;
+  window.triggerEditDiesel = triggerEditDiesel;
+  window.triggerDeleteMechanic = triggerDeleteMechanic;
+  window.triggerEditMechanic = triggerEditMechanic;
+  window.triggerDeleteDriverProfile = triggerDeleteDriverProfile;
+  window.triggerEditDriverProfile = triggerEditDriverProfile;
+  console.debug('[DBG] exported trigger functions to window');
+} catch (e) {}
 function startLiveClock() {
   const clockText = document.getElementById("clock-txt");
   if (!clockText) return;
@@ -159,14 +332,11 @@ function handleLogout() {
 
 // --- Form Calculations ---
 function calculateFormTotals() {
-  const rice = parseInt(document.getElementById("form-rice-bags").value) || 0;
-  const wheat = parseInt(document.getElementById("form-wheat-bags").value) || 0;
+  const bags = parseInt(document.getElementById("form-bags").value) || 0;
   const rate = 10;
-  
-  const totalBags = rice + wheat;
-  const totalAmount = totalBags * rate;
+  const totalAmount = bags * rate;
 
-  document.getElementById("form-total-bags-display").innerText = totalBags.toLocaleString();
+  document.getElementById("form-total-bags-display").innerText = bags.toLocaleString();
   document.getElementById("form-amount-display").innerText = `₹ ${totalAmount.toLocaleString('en-IN')}`;
 }
 
@@ -237,16 +407,14 @@ function renderChallanTable(list) {
       <td>${escapeHTML(c.vehicleNumber || '-')}</td>
       <td>${escapeHTML(c.driverName || '-')}</td>
       <td>${formattedDate}</td>
-      <td class="text-right">${c.riceBags.toLocaleString()}</td>
-      <td class="text-right">${c.wheatBags.toLocaleString()}</td>
-      <td class="text-right font-bold text-white">${c.totalBags.toLocaleString()}</td>
+      <td class="text-right">${(c.bags || 0).toLocaleString()}</td>
       <td class="text-right">₹ ${c.ratePerBag}</td>
       <td class="text-right font-bold text-white">₹ ${c.calculatedAmount.toLocaleString('en-IN')}</td>
       <td class="text-center">
         <div class="actions-cell">
-          <button class="btn-icon view-btn" onclick="triggerViewChallan('${c.id}')" title="View Bill"><i class="fa-solid fa-eye"></i></button>
-          <button class="btn-icon edit-btn" onclick="triggerEditChallan('${c.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-icon delete-btn" onclick="triggerDeleteChallan('${c.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn-icon view-btn" data-action="view-challan" data-id="${c.id}" onclick="triggerViewChallan('${c.id}')" title="View Bill"><i class="fa-solid fa-eye"></i></button>
+          <button class="btn-icon edit-btn" data-action="edit-challan" data-id="${c.id}" onclick="triggerEditChallan('${c.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-icon delete-btn" data-action="delete-challan" data-id="${c.id}" onclick="triggerDeleteChallan('${c.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       </td>
     `;
@@ -257,8 +425,6 @@ function renderChallanTable(list) {
 // Calculate Dashboard stats cards for the current month
 function calculateDashboardStats() {
   const totalChallansCard = document.getElementById("stat-total-challans");
-  const riceBagsCard = document.getElementById("stat-rice-bags");
-  const wheatBagsCard = document.getElementById("stat-wheat-bags");
   const totalBagsCard = document.getElementById("stat-total-bags");
   const totalAmountCard = document.getElementById("stat-total-amount");
 
@@ -273,23 +439,16 @@ function calculateDashboardStats() {
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const activeYearMonth = `${yyyy}-${mm}`; // e.g. "2026-06"
 
-  let riceSum = 0;
-  let wheatSum = 0;
   let bagsSum = 0;
   let amountSum = 0;
 
   challanList.forEach(c => {
-    // Match challans dated in this month
     if (c.month === activeYearMonth) {
-      riceSum += c.riceBags;
-      wheatSum += c.wheatBags;
-      bagsSum += c.totalBags;
-      amountSum += c.calculatedAmount;
+      bagsSum += (c.bags || 0);
+      amountSum += c.calculatedAmount || 0;
     }
   });
 
-  riceBagsCard.innerText = riceSum.toLocaleString();
-  wheatBagsCard.innerText = wheatSum.toLocaleString();
   totalBagsCard.innerText = bagsSum.toLocaleString();
   totalAmountCard.innerText = `₹ ${amountSum.toLocaleString('en-IN')}`;
 }
@@ -503,11 +662,40 @@ function launchQrScanner() {
   }
 
   function parseQrPayload(payload) {
+    // Try JSON first, then URLSearchParams-style key=value pairs, then simple CSV
     try {
       return JSON.parse(payload);
-    } catch (e) {
-      return null;
-    }
+    } catch (e) {}
+
+    try {
+      // If payload looks like a querystring or key=value pairs
+      if (payload.includes('=') && (payload.includes('&') || payload.includes('%20') || payload.includes('+') )) {
+        const cleaned = payload.trim();
+        const params = new URLSearchParams(cleaned);
+        const obj = {};
+        for (const [k, v] of params.entries()) obj[k] = v;
+        return Object.keys(obj).length ? obj : null;
+      }
+    } catch (e) {}
+
+    try {
+      // key:value pairs separated by commas
+      if (payload.includes(':') && payload.includes(',')) {
+        const parts = payload.split(',');
+        const obj = {};
+        parts.forEach(p => {
+          const idx = p.indexOf(':');
+          if (idx > 0) {
+            const k = p.slice(0, idx).trim();
+            const v = p.slice(idx + 1).trim();
+            obj[k] = v;
+          }
+        });
+        return Object.keys(obj).length ? obj : null;
+      }
+    } catch (e) {}
+
+    return null;
   }
 
   function scanFrame() {
@@ -586,20 +774,12 @@ async function triggerDeleteChallan(id) {
   const challan = challanList.find(c => String(c.id) === String(id));
   if (!challan) return;
 
+  console.debug('[DBG] triggerDeleteChallan called', id, challan);
   const confirmDelete = confirm(`Are you sure you want to delete Challan Log #${challan.challanNo} for ${challan.dealerName}?`);
   if (!confirmDelete) return;
 
   try {
-    const response = await fetch(`/api/challans/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to delete log.");
-    }
-
+    const data = await doDeleteApi(`/api/challans/${id}`, id);
     alert(data.message || "Record deleted.");
     await loadChallanData();
 
@@ -648,18 +828,9 @@ function triggerViewChallan(id) {
       <table class="invoice-table" style="margin-bottom: 20px;">
         <thead>
           <tr>
-            <th>Cargo Categories</th>
-            <th class="text-right">Rice Bags</th>
-            <th class="text-right">Wheat Bags</th>
-            <th class="text-right">Total Bags</th>
-            <th class="text-right">Rate / Bag</th>
-            <th class="text-right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Grain Logistics Carriers</td>
-            <td class="text-right">${challan.riceBags.toLocaleString()} Bags</td>
+            const data = await doDeleteApi(`/api/driver-profiles/${id}`, id);
+            alert(data.message || "Record deleted.");
+            await loadDriverProfileData();
             <td class="text-right">${challan.wheatBags.toLocaleString()} Bags</td>
             <td class="text-right font-bold">${challan.totalBags.toLocaleString()} Bags</td>
             <td class="text-right">₹ ${challan.ratePerBag}</td>
@@ -956,8 +1127,8 @@ function renderDieselTable(list) {
       <td>${escapeHTML(d.remarks || '-')}</td>
       <td class="text-center">
         <div class="actions-cell">
-          <button class="btn-icon edit-btn" onclick="triggerEditDiesel('${d.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-icon delete-btn" onclick="triggerDeleteDiesel('${d.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn-icon edit-btn" data-action="edit-diesel" data-id="${d.id}" onclick="triggerEditDiesel('${d.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-icon delete-btn" data-action="delete-diesel" data-id="${d.id}" onclick="triggerDeleteDiesel('${d.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       </td>
     `;
@@ -1138,16 +1309,7 @@ async function triggerDeleteDiesel(id) {
   if (!confirmDelete) return;
 
   try {
-    const response = await fetch(`/api/diesel/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to delete log.");
-    }
-
+    const data = await doDeleteApi(`/api/diesel/${id}`, id);
     alert(data.message || "Record deleted.");
     await loadDieselData();
 
@@ -1337,8 +1499,8 @@ function renderMechanicTable(list) {
       <td>${escapeHTML(m.remarks || '-')}</td>
       <td class="text-center">
         <div class="actions-cell">
-          <button class="btn-icon edit-btn" onclick="triggerEditMechanic('${m.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-icon delete-btn" onclick="triggerDeleteMechanic('${m.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn-icon edit-btn" data-action="edit-mechanic" data-id="${m.id}" onclick="triggerEditMechanic('${m.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-icon delete-btn" data-action="delete-mechanic" data-id="${m.id}" onclick="triggerDeleteMechanic('${m.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       </td>
     `;
@@ -1519,16 +1681,7 @@ async function triggerDeleteMechanic(id) {
   if (!confirmDelete) return;
 
   try {
-    const response = await fetch(`/api/mechanic/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to delete log.");
-    }
-
+    const data = await doDeleteApi(`/api/mechanic/${id}`, id);
     alert(data.message || "Record deleted.");
     await loadMechanicData();
 
@@ -1700,8 +1853,8 @@ function renderDriverTable(list) {
       <td>${escapeHTML(d.remarks || '-')}</td>
       <td class="text-center">
         <div class="actions-cell">
-          <button class="btn-icon edit-btn" onclick="triggerEditDriver('${d.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-icon delete-btn" onclick="triggerDeleteDriver('${d.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn-icon edit-btn" data-action="edit-driver" data-id="${d.id}" onclick="triggerEditDriver('${d.id}')" title="Edit Log"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-icon delete-btn" data-action="delete-driver" data-id="${d.id}" onclick="triggerDeleteDriver('${d.id}')" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       </td>
     `;
@@ -1850,6 +2003,7 @@ function showDriverFormFeedback(msg, type) {
 
 function triggerEditDriver(id) {
   const d = driverList.find(x => String(x.id) === String(id));
+  console.debug('[DBG] triggerEditDriver called', id, d);
   if (!d) return;
 
   document.getElementById("form-driver-id").value = d.id;
@@ -1873,22 +2027,14 @@ function triggerEditDriver(id) {
 
 async function triggerDeleteDriver(id) {
   const d = driverList.find(x => String(x.id) === String(id));
+  console.debug('[DBG] triggerDeleteDriver called', id, d);
   if (!d) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Driver Record for ${d.driverName}?`);
   if (!confirmDelete) return;
 
   try {
-    const response = await fetch(`/api/driver/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to delete record.");
-    }
-
+    const data = await doDeleteApi(`/api/driver/${id}`, id);
     alert(data.message || "Record deleted.");
     await loadDriverData();
 
@@ -2087,8 +2233,8 @@ function renderVehicleTable(list) {
       <td>${rcBtn}</td>
       <td class="text-center">
         <div class="actions-cell">
-          <button class="btn-icon edit-btn" onclick="triggerEditVehicle('${v.id}')" title="Edit Vehicle"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-icon delete-btn" onclick="triggerDeleteVehicle('${v.id}')" title="Delete Vehicle"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn-icon edit-btn" data-action="edit-vehicle" data-id="${v.id}" onclick="triggerEditVehicle('${v.id}')" title="Edit Vehicle"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-icon delete-btn" data-action="delete-vehicle" data-id="${v.id}" onclick="triggerDeleteVehicle('${v.id}')" title="Delete Vehicle"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       </td>
     `;
@@ -2246,6 +2392,7 @@ function showVehicleFormFeedback(msg, type) {
 
 function triggerEditVehicle(id) {
   const v = vehicleList.find(x => String(x.id) === String(id));
+  console.debug('[DBG] triggerEditVehicle called', id, v);
   if (!v) return;
 
   document.getElementById("form-vehicle-id").value = v.id;
@@ -2275,22 +2422,14 @@ function triggerEditVehicle(id) {
 
 async function triggerDeleteVehicle(id) {
   const v = vehicleList.find(x => String(x.id) === String(id));
+  console.debug('[DBG] triggerDeleteVehicle called', id, v);
   if (!v) return;
 
   const confirmDelete = confirm(`Are you sure you want to delete Vehicle Profile for ${v.vehicleNumber}?`);
   if (!confirmDelete) return;
 
   try {
-    const response = await fetch(`/api/vehicles/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "Failed to delete vehicle profile.");
-    }
-
+    const data = await doDeleteApi(`/api/vehicles/${id}`, id);
     alert(data.message || "Record deleted.");
     await loadVehicleData();
 
@@ -2391,8 +2530,8 @@ function renderDriverProfileTable(list) {
       </td>
       <td class="text-center">
         <div class="actions-cell">
-          <button class="btn-icon edit-btn" onclick="triggerEditDriverProfile('${dp.id}')" title="Edit Profile"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-icon delete-btn" onclick="triggerDeleteDriverProfile('${dp.id}')" title="Delete Profile"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn-icon edit-btn" data-action="edit-driver-profile" data-id="${dp.id}" onclick="triggerEditDriverProfile('${dp.id}')" title="Edit Profile"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-icon delete-btn" data-action="delete-driver-profile" data-id="${dp.id}" onclick="triggerDeleteDriverProfile('${dp.id}')" title="Delete Profile"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       </td>
     `;

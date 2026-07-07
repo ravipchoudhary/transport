@@ -101,26 +101,7 @@
               </div>
               <div class="card-footer-desc">Cumulative Records</div>
             </div>
-            <div class="stat-card">
-              <div class="card-inner">
-                <div>
-                  <span class="card-title">Rice Bags</span>
-                  <h3 id="stat-rice-bags">0</h3>
-                </div>
-                <div class="card-icon orange-bg"><i class="fa-solid fa-bowl-rice"></i></div>
-              </div>
-              <div class="card-footer-desc">This Month</div>
-            </div>
-            <div class="stat-card">
-              <div class="card-inner">
-                <div>
-                  <span class="card-title">Wheat Bags</span>
-                  <h3 id="stat-wheat-bags">0</h3>
-                </div>
-                <div class="card-icon blue-bg"><i class="fa-solid fa-wheat-awn"></i></div>
-              </div>
-              <div class="card-footer-desc">This Month</div>
-            </div>
+            <!-- Rice/Wheat breakdown removed; using single Bags metric -->
             <div class="stat-card">
               <div class="card-inner">
                 <div>
@@ -181,9 +162,7 @@
                       <th>Vehicle Number</th>
                       <th>Driver Name</th>
                       <th>Date</th>
-                      <th class="text-right">Rice Bags</th>
-                      <th class="text-right">Wheat Bags</th>
-                      <th class="text-right">Total Bags</th>
+                      <th class="text-right">Bags</th>
                       <th class="text-right">Rate</th>
                       <th class="text-right">Amount</th>
                       <th class="text-center">Actions</th>
@@ -266,17 +245,10 @@
 
                   <div class="form-row">
                     <div class="input-group">
-                      <label for="form-rice-bags">Rice Bags Qty</label>
+                      <label for="form-bags">Bags Qty</label>
                       <div class="input-with-icon">
-                        <i class="fa-solid fa-bowl-rice"></i>
-                        <input type="number" id="form-rice-bags" required value="0" min="0" oninput="calculateFormTotals()">
-                      </div>
-                    </div>
-                    <div class="input-group">
-                      <label for="form-wheat-bags">Wheat Bags Qty</label>
-                      <div class="input-with-icon">
-                        <i class="fa-solid fa-wheat-awn"></i>
-                        <input type="number" id="form-wheat-bags" required value="0" min="0" oninput="calculateFormTotals()">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                        <input type="number" id="form-bags" required value="0" min="0" oninput="calculateFormTotals()">
                       </div>
                     </div>
                   </div>
@@ -364,12 +336,8 @@
                   <span class="r-val" id="rep-display-month">June 2026</span>
                 </div>
                 <div class="r-stat">
-                  <span class="r-label">Total Rice Bags</span>
-                  <span class="r-val" id="rep-total-rice">0</span>
-                </div>
-                <div class="r-stat">
-                  <span class="r-label">Total Wheat Bags</span>
-                  <span class="r-val" id="rep-total-wheat">0</span>
+                  <span class="r-label">Total Bags</span>
+                  <span class="r-val" id="rep-total-bags">0</span>
                 </div>
                 <div class="r-stat">
                   <span class="r-label">Total Bags</span>
@@ -391,9 +359,7 @@
                       <th>Vehicle Number</th>
                       <th>Driver Name</th>
                       <th>Date</th>
-                      <th class="text-right">Rice Bags</th>
-                      <th class="text-right">Wheat Bags</th>
-                      <th class="text-right">Total Bags</th>
+                      <th class="text-right">Bags</th>
                       <th class="text-right">Rate</th>
                       <th class="text-right">Amount</th>
                     </tr>

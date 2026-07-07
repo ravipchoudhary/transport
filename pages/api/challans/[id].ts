@@ -21,9 +21,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { id } = req.query as { id: string };
 
   if (req.method === 'PUT') {
-    const { challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
+    const { challanNo, dealerName, date, totalBags, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData } = req.body;
     if (!challanNo || !dealerName || !date) return res.status(400).json({ error: 'Challan number, dealer name, and date are required for updates.' });
-    const result = await updateChallan(user.id, id, challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData);
+    const result = await updateChallan(user.id, id, challanNo, dealerName, date, riceBags, wheatBags, totalBags, ratePerBag, vehicleNumber, driverName, scannedData);
     if (!result.success) return res.status(404).json({ error: result.message });
     return res.status(200).json(result.challan);
   }

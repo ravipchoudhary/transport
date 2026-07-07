@@ -82,12 +82,10 @@ async function getChallans(userId) {
   });
 }
 
-async function addChallan(userId, challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData) {
-  const rice = parseInt(riceBags) || 0;
-  const wheat = parseInt(wheatBags) || 0;
-  const totalBags = rice + wheat;
+async function addChallan(userId, challanNo, dealerName, date, bags, ratePerBag, vehicleNumber, driverName, scannedData) {
+  const bagCount = parseInt(bags) || 0;
   const rate = parseFloat(ratePerBag) || 10;
-  const calculatedAmount = totalBags * rate;
+  const calculatedAmount = bagCount * rate;
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : '';
 
@@ -96,9 +94,7 @@ async function addChallan(userId, challanNo, dealerName, date, riceBags, wheatBa
       challanNo,
       dealerName,
       date: dateObj,
-      riceBags: rice,
-      wheatBags: wheat,
-      totalBags,
+      bags: bagCount,
       ratePerBag: rate,
       calculatedAmount,
       month,
@@ -112,17 +108,15 @@ async function addChallan(userId, challanNo, dealerName, date, riceBags, wheatBa
   return { success: true, challan };
 }
 
-async function updateChallan(userId, challanId, challanNo, dealerName, date, riceBags, wheatBags, ratePerBag, vehicleNumber, driverName, scannedData) {
+async function updateChallan(userId, challanId, challanNo, dealerName, date, bags, ratePerBag, vehicleNumber, driverName, scannedData) {
   const existing = await prisma.challan.findFirst({ where: { id: challanId, userId } });
   if (!existing) {
     return { success: false, message: 'Challan not found or unauthorized.' };
   }
 
-  const rice = parseInt(riceBags) || 0;
-  const wheat = parseInt(wheatBags) || 0;
-  const totalBags = rice + wheat;
+  const bagCount = parseInt(bags) || 0;
   const rate = parseFloat(ratePerBag) || 10;
-  const calculatedAmount = totalBags * rate;
+  const calculatedAmount = bagCount * rate;
   const dateObj = normalizeDate(date);
   const month = dateObj ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}` : existing.month;
 
@@ -132,9 +126,7 @@ async function updateChallan(userId, challanId, challanNo, dealerName, date, ric
       challanNo,
       dealerName,
       date: dateObj,
-      riceBags: rice,
-      wheatBags: wheat,
-      totalBags,
+      bags: bagCount,
       ratePerBag: rate,
       calculatedAmount,
       month,

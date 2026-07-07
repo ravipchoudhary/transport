@@ -46,6 +46,51 @@ type DriverProfile = {
   licensePhoto?: string | null;
 };
 
+type DriverRecord = {
+  id: string;
+  driverName: string;
+  mobileNumber: string;
+  vehicleNumber: string;
+  amountGiven: number;
+  paymentDate: string;
+  paymentType: string;
+  remarks?: string | null;
+  month: string;
+};
+
+type MechanicExpense = {
+  id: string;
+  mechanicName: string;
+  vehicleNumber: string;
+  workDescription: string;
+  partsUsed?: string | null;
+  amountPaid: number;
+  date: string;
+  paidBy: string;
+  remarks?: string | null;
+  month: string;
+};
+
+type DieselEntry = {
+  id: string;
+  driverName: string;
+  vehicleNumber: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  date: string;
+  givenBy: string;
+  remarks?: string | null;
+  month: string;
+};
+
+type DieselReportRow = {
+  driverName: string;
+  totalLiters: number;
+  averageRate: number;
+  totalAmount: number;
+};
+
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'challan' | 'vehicle' | 'driver-profile' | 'driver' | 'mechanic' | 'diesel'>('challan');
@@ -62,6 +107,43 @@ export default function DashboardPage() {
   const [driverProfileSearch, setDriverProfileSearch] = useState('');
   const [driverProfileLoading, setDriverProfileLoading] = useState(true);
   const [driverStats, setDriverStats] = useState({ totalDrivers: 0, assignedDrivers: 0 });
+  const [driverRecords, setDriverRecords] = useState<DriverRecord[]>([]);
+  const [driverSearch, setDriverSearch] = useState('');
+  const [driverMonthFilter, setDriverMonthFilter] = useState('all');
+  const [driverLoading, setDriverLoading] = useState(true);
+  const [driverLedgerStats, setDriverLedgerStats] = useState({ totalTransactions: 0, advancesThisMonth: 0 });
+  const [driverReportMonth, setDriverReportMonth] = useState(() => {
+    const today = new Date();
+    return String(today.getMonth() + 1).padStart(2, '0');
+  });
+  const [driverReportYear, setDriverReportYear] = useState(() => String(new Date().getFullYear()));
+  const [driverReportCompiled, setDriverReportCompiled] = useState(false);
+  const [driverReportResults, setDriverReportResults] = useState<DriverRecord[]>([]);
+  const [driverReportSummary, setDriverReportSummary] = useState({ totalAmount: 0, uniqueDrivers: 0, totalTransactions: 0 });
+  const [mechanicExpenses, setMechanicExpenses] = useState<MechanicExpense[]>([]);
+  const [mechanicSearch, setMechanicSearch] = useState('');
+  const [mechanicMonthFilter, setMechanicMonthFilter] = useState('all');
+  const [mechanicLoading, setMechanicLoading] = useState(true);
+  const [mechanicReportMonth, setMechanicReportMonth] = useState(() => {
+    const today = new Date();
+    return String(today.getMonth() + 1).padStart(2, '0');
+  });
+  const [mechanicReportYear, setMechanicReportYear] = useState(() => String(new Date().getFullYear()));
+  const [mechanicReportCompiled, setMechanicReportCompiled] = useState(false);
+  const [mechanicReportResults, setMechanicReportResults] = useState<MechanicExpense[]>([]);
+  const [mechanicReportSummary, setMechanicReportSummary] = useState({ totalAmount: 0, totalTasks: 0 });
+  const [dieselEntries, setDieselEntries] = useState<DieselEntry[]>([]);
+  const [dieselSearch, setDieselSearch] = useState('');
+  const [dieselMonthFilter, setDieselMonthFilter] = useState('all');
+  const [dieselLoading, setDieselLoading] = useState(true);
+  const [dieselReportMonth, setDieselReportMonth] = useState(() => {
+    const today = new Date();
+    return String(today.getMonth() + 1).padStart(2, '0');
+  });
+  const [dieselReportYear, setDieselReportYear] = useState(() => String(new Date().getFullYear()));
+  const [dieselReportCompiled, setDieselReportCompiled] = useState(false);
+  const [dieselReportResults, setDieselReportResults] = useState<DieselEntry[]>([]);
+  const [dieselReportSummary, setDieselReportSummary] = useState({ totalLiters: 0, totalAmount: 0, averageRate: 0 });
   const [challanSearch, setChallanSearch] = useState('');
   const [challanMonthFilter, setChallanMonthFilter] = useState('all');
   const [challanVehicleFilter, setChallanVehicleFilter] = useState('all');
@@ -249,6 +331,16 @@ export default function DashboardPage() {
     if (bagsDisplay) bagsDisplay.textContent = totalBags.toLocaleString();
   };
 
+  const updateDieselAmount = () => {
+    const quantity = Number((document.getElementById('form-diesel-quantity') as HTMLInputElement | null)?.value || 0);
+    const rate = Number((document.getElementById('form-diesel-rate') as HTMLInputElement | null)?.value || 0);
+    const totalAmount = quantity * rate;
+    const amountDisplay = document.getElementById('form-diesel-amount-display');
+    if (amountDisplay) {
+      amountDisplay.textContent = `₹ ${totalAmount.toLocaleString('en-IN')}`;
+    }
+  };
+
   const setDefaultChallanDate = () => {
     if (typeof window === 'undefined') return;
     const today = new Date();
@@ -411,20 +503,25 @@ export default function DashboardPage() {
       const data = await response.json();
       const loadedChallans: Challan[] = Array.isArray(data)
         ? data
-            .map((item: any) => ({
-              id: String(item.id),
-              challanNo: item.challanNo || '',
-              dealerName: item.dealerName || '',
-              vehicleNumber: item.vehicleNumber || null,
-              driverName: item.driverName || null,
-              date: item.date || '',
-              riceBags: Number(item.riceBags || 0),
-              wheatBags: Number(item.wheatBags || 0),
-              totalBags: Number(item.totalBags || (Number(item.riceBags || 0) + Number(item.wheatBags || 0))),
-              ratePerBag: Number(item.ratePerBag || 10),
-              calculatedAmount: Number(item.calculatedAmount || ((Number(item.riceBags || 0) + Number(item.wheatBags || 0)) * Number(item.ratePerBag || 10))),
-              scannedData: item.scannedData || null,
-            }))
+            .map((item: any) => {
+              const rice = Number(item.riceBags || 0);
+              const wheat = Number(item.wheatBags || 0);
+              const totalBags = Number(item.totalBags || rice + wheat);
+              return {
+                id: String(item.id),
+                challanNo: item.challanNo || '',
+                dealerName: item.dealerName || '',
+                vehicleNumber: item.vehicleNumber || null,
+                driverName: item.driverName || null,
+                date: item.date || '',
+                riceBags: rice,
+                wheatBags: wheat,
+                totalBags,
+                ratePerBag: Number(item.ratePerBag || 10),
+                calculatedAmount: Number(item.calculatedAmount || (totalBags * Number(item.ratePerBag || 10))),
+                scannedData: item.scannedData || null,
+              };
+            })
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         : [];
 
@@ -532,35 +629,113 @@ export default function DashboardPage() {
     setReportCompiled(true);
   };
 
-  const handleChallanFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFormToast(null);
-
-    const form = event.currentTarget;
-    const challanNo = (form.querySelector('#form-challan-no') as HTMLInputElement | null)?.value.trim() || '';
-    const dealerName = (form.querySelector('#form-dealer-name') as HTMLInputElement | null)?.value.trim() || '';
-    const vehicleNumber = (form.querySelector('#form-challan-vehicle') as HTMLSelectElement | null)?.value.trim() || '';
-    const driverName = (form.querySelector('#form-challan-driver') as HTMLSelectElement | null)?.value.trim() || '';
-    const date = (form.querySelector('#form-challan-date') as HTMLInputElement | null)?.value || '';
-    const riceBags = Number((form.querySelector('#form-rice-bags') as HTMLInputElement | null)?.value || 0);
-    const wheatBags = Number((form.querySelector('#form-wheat-bags') as HTMLInputElement | null)?.value || 0);
-    const ratePerBag = 10;
-
-    if (!challanNo || !dealerName || !date) {
-      setFormToast('Challan number, dealer name, and date are required.');
+  const exportLedgerCsv = () => {
+    if (!reportCompiled) {
+      setFormToast('Compile the ledger before exporting.');
       return;
     }
 
-    const body = {
-      challanNo,
-      dealerName,
-      vehicleNumber,
-      driverName,
-      date,
-      riceBags,
-      wheatBags,
-      ratePerBag,
-    };
+    const header = ['Challan No', 'Dealer Name', 'Vehicle Number', 'Driver Name', 'Date', 'Rice Bags', 'Wheat Bags', 'Total Bags', 'Rate', 'Amount'];
+    const rows = reportResults.map((item) => [
+      item.challanNo,
+      item.dealerName,
+      item.vehicleNumber || '',
+      item.driverName || '',
+      formatDate(item.date),
+      String(item.riceBags),
+      String(item.wheatBags),
+      String(item.totalBags),
+      String(item.ratePerBag),
+      String(item.calculatedAmount),
+    ]);
+
+    const csvContent = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `ledger-${reportMonth}-${reportYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const resetChallanForm = () => {
+    const form = document.getElementById('challan-entry-form') as HTMLFormElement | null;
+    if (form) form.reset();
+
+    const formIdInput = document.getElementById('form-challan-id') as HTMLInputElement | null;
+    if (formIdInput) formIdInput.value = '';
+
+    const titleEl = document.getElementById('form-panel-title');
+    if (titleEl) {
+      titleEl.innerHTML = '<i class="fa-solid fa-folder-plus"></i> Add New Challan Entry';
+    }
+
+    setDefaultChallanDate();
+    updateFormTotals();
+  };
+
+  const handleViewChallan = (id: string) => {
+    const challan = challans.find((item) => item.id === id);
+    if (!challan) return;
+
+    const details = [
+      `Challan No: ${challan.challanNo}`,
+      `Dealer Name: ${challan.dealerName}`,
+      `Vehicle Number: ${challan.vehicleNumber || '-'}`,
+      `Driver Name: ${challan.driverName || '-'}`,
+      `Date: ${formatDate(challan.date)}`,
+      `Rice Bags: ${challan.riceBags}`,
+      `Wheat Bags: ${challan.wheatBags}`,
+      `Total Bags: ${challan.totalBags}`,
+      `Amount: ₹ ${challan.calculatedAmount.toLocaleString('en-IN')}`,
+    ].join('\n');
+
+    window.alert(details);
+  };
+
+  const handleEditChallan = (id: string) => {
+    const challan = challans.find((item) => item.id === id);
+    if (!challan) return;
+
+    const titleEl = document.getElementById('form-panel-title');
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Edit Challan #${challan.challanNo}`;
+    }
+
+    const formIdInput = document.getElementById('form-challan-id') as HTMLInputElement | null;
+    const challanNoInput = document.getElementById('form-challan-no') as HTMLInputElement | null;
+    const dealerNameInput = document.getElementById('form-dealer-name') as HTMLInputElement | null;
+    const vehicleInput = document.getElementById('form-challan-vehicle') as HTMLSelectElement | null;
+    const driverInput = document.getElementById('form-challan-driver') as HTMLSelectElement | null;
+    const dateInput = document.getElementById('form-challan-date') as HTMLInputElement | null;
+    const riceInput = document.getElementById('form-rice-bags') as HTMLInputElement | null;
+    const wheatInput = document.getElementById('form-wheat-bags') as HTMLInputElement | null;
+
+    if (formIdInput) formIdInput.value = challan.id;
+    if (challanNoInput) challanNoInput.value = challan.challanNo;
+    if (dealerNameInput) dealerNameInput.value = challan.dealerName;
+    if (vehicleInput) vehicleInput.value = challan.vehicleNumber || '';
+    if (driverInput) driverInput.value = challan.driverName || '';
+    if (dateInput) dateInput.value = challan.date;
+    if (riceInput) riceInput.value = String(challan.riceBags);
+    if (wheatInput) wheatInput.value = String(challan.wheatBags);
+
+    updateFormTotals();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteChallan = async (id: string) => {
+    const challan = challans.find((item) => item.id === id);
+    if (!challan) return;
+
+    const confirmDelete = window.confirm(`Delete Challan #${challan.challanNo} for ${challan.dealerName}?`);
+    if (!confirmDelete) return;
 
     try {
       const token = getAuthToken();
@@ -569,8 +744,73 @@ export default function DashboardPage() {
         return;
       }
 
-      const response = await fetch('/api/challans', {
-        method: 'POST',
+      const response = await fetch(`/api/challans/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          logout();
+          return;
+        }
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Unable to delete challan.');
+      }
+
+      await loadChallans();
+      setFormToast('Challan deleted successfully.');
+      resetChallanForm();
+    } catch (error) {
+      console.error('Error deleting challan:', error);
+      setFormToast((error as Error).message || 'Unable to delete challan.');
+    }
+  };
+
+  const handleChallanFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormToast(null);
+
+    const form = event.currentTarget;
+    const formId = (form.querySelector('#form-challan-id') as HTMLInputElement | null)?.value.trim() || '';
+    const challanNo = (form.querySelector('#form-challan-no') as HTMLInputElement | null)?.value.trim() || '';
+    const dealerName = (form.querySelector('#form-dealer-name') as HTMLInputElement | null)?.value.trim() || '';
+    const vehicleNumber = (form.querySelector('#form-challan-vehicle') as HTMLSelectElement | null)?.value.trim() || '';
+    const driverName = (form.querySelector('#form-challan-driver') as HTMLSelectElement | null)?.value.trim() || '';
+    const date = (form.querySelector('#form-challan-date') as HTMLInputElement | null)?.value || '';
+    const riceBags = Number((form.querySelector('#form-rice-bags') as HTMLInputElement | null)?.value || 0);
+    const wheatBags = Number((form.querySelector('#form-wheat-bags') as HTMLInputElement | null)?.value || 0);
+    const ratePerBag = 8.25;
+
+    if (!challanNo || !dealerName || !date) {
+      setFormToast('Challan number, dealer name, and date are required.');
+      return;
+    }
+
+    const bagCount = riceBags + wheatBags;
+    const body = {
+      challanNo,
+      dealerName,
+      vehicleNumber,
+      driverName,
+      date,
+      totalBags: bagCount,
+      riceBags,
+      wheatBags,
+      ratePerBag,
+    };
+
+    const token = getAuthToken();
+    if (!token) {
+      logout();
+      return;
+    }
+
+    try {
+      const response = await fetch(formId ? `/api/challans/${formId}` : '/api/challans', {
+        method: formId ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -584,8 +824,15 @@ export default function DashboardPage() {
           return;
         }
         const errorData = await response.json().catch(() => null);
-        const message = errorData?.error || 'Unable to save record. Please try again.';
+        const message = errorData?.error || (formId ? 'Unable to update challan.' : 'Unable to save record. Please try again.');
         setFormToast(message);
+        return;
+      }
+
+      if (formId) {
+        await loadChallans();
+        setFormToast('Challan updated successfully.');
+        resetChallanForm();
         return;
       }
 
@@ -599,7 +846,7 @@ export default function DashboardPage() {
         date: created.date || date,
         riceBags: Number(created.riceBags ?? riceBags),
         wheatBags: Number(created.wheatBags ?? wheatBags),
-        totalBags: Number(created.totalBags ?? riceBags + wheatBags),
+        totalBags: Number(created.totalBags || riceBags + wheatBags),
         ratePerBag: Number(created.ratePerBag ?? ratePerBag),
         calculatedAmount: Number(created.calculatedAmount ?? ((riceBags + wheatBags) * ratePerBag)),
       };
@@ -717,24 +964,518 @@ export default function DashboardPage() {
     }
   };
 
+  const loadDriverRecords = async () => {
+    setDriverLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+      const response = await fetch('/api/driver', { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const loadedRecords: DriverRecord[] = Array.isArray(data)
+        ? data.map((item: any) => ({
+            id: String(item.id),
+            driverName: String(item.driverName || ''),
+            mobileNumber: String(item.mobileNumber || ''),
+            vehicleNumber: String(item.vehicleNumber || ''),
+            amountGiven: Number(item.amountGiven || 0),
+            paymentDate: item.paymentDate || '',
+            paymentType: String(item.paymentType || ''),
+            remarks: item.remarks || null,
+            month: item.month || '',
+          }))
+        : [];
+      setDriverRecords(loadedRecords);
+      setDriverLedgerStats({
+        totalTransactions: loadedRecords.length,
+        advancesThisMonth: loadedRecords
+          .filter((record) => {
+            const date = new Date(record.paymentDate);
+            if (Number.isNaN(date.getTime())) return false;
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = String(date.getFullYear());
+            return month === driverReportMonth && year === driverReportYear;
+          })
+          .reduce((sum, record) => sum + record.amountGiven, 0),
+      });
+    } catch (error) {
+      console.error('Error loading driver records:', error);
+    } finally {
+      setDriverLoading(false);
+    }
+  };
+
+  const loadMechanicExpenses = async () => {
+    setMechanicLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+      const response = await fetch('/api/mechanic', { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const loadedExpenses: MechanicExpense[] = Array.isArray(data)
+        ? data.map((item: any) => ({
+            id: String(item.id),
+            mechanicName: String(item.mechanicName || ''),
+            vehicleNumber: String(item.vehicleNumber || ''),
+            workDescription: String(item.workDescription || ''),
+            partsUsed: item.partsUsed || null,
+            amountPaid: Number(item.amountPaid || 0),
+            date: item.date || '',
+            paidBy: String(item.paidBy || ''),
+            remarks: item.remarks || null,
+            month: item.month || '',
+          }))
+        : [];
+      setMechanicExpenses(loadedExpenses);
+    } catch (error) {
+      console.error('Error loading mechanic expenses:', error);
+    } finally {
+      setMechanicLoading(false);
+    }
+  };
+
+  const loadDieselEntries = async () => {
+    setDieselLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+      const response = await fetch('/api/diesel', { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) return;
+      const data = await response.json();
+      const loadedEntries: DieselEntry[] = Array.isArray(data)
+        ? data.map((item: any) => ({
+            id: String(item.id),
+            driverName: String(item.driverName || ''),
+            vehicleNumber: String(item.vehicleNumber || ''),
+            quantity: Number(item.quantity || 0),
+            rate: Number(item.rate || 0),
+            amount: Number(item.amount || 0),
+            date: item.date || '',
+            givenBy: String(item.givenBy || ''),
+            remarks: item.remarks || null,
+            month: item.month || '',
+          }))
+        : [];
+      setDieselEntries(loadedEntries);
+    } catch (error) {
+      console.error('Error loading diesel entries:', error);
+    } finally {
+      setDieselLoading(false);
+    }
+  };
+
+  const resetDriverForm = () => {
+    const form = document.getElementById('driver-entry-form') as HTMLFormElement | null;
+    if (form) form.reset();
+    setFormToast(null);
+  };
+
+  const resetMechanicForm = () => {
+    const form = document.getElementById('mechanic-entry-form') as HTMLFormElement | null;
+    if (form) form.reset();
+    setFormToast(null);
+  };
+
+  const resetDieselForm = () => {
+    const form = document.getElementById('diesel-entry-form') as HTMLFormElement | null;
+    if (form) form.reset();
+    setFormToast(null);
+  };
+
+  const handleDriverRecordSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormToast(null);
+    const form = event.currentTarget;
+    const driverName = (form.querySelector('#form-driver-name') as HTMLInputElement | null)?.value.trim() || '';
+    const mobileNumber = (form.querySelector('#form-driver-mobile') as HTMLInputElement | null)?.value.trim() || '';
+    const vehicleNumber = (form.querySelector('#form-driver-vehicle') as HTMLInputElement | null)?.value.trim() || '';
+    const amountGiven = Number((form.querySelector('#form-driver-amount') as HTMLInputElement | null)?.value || 0);
+    const paymentDate = (form.querySelector('#form-driver-date') as HTMLInputElement | null)?.value || '';
+    const paymentType = (form.querySelector('#form-driver-type') as HTMLSelectElement | null)?.value || '';
+    const remarks = (form.querySelector('#form-driver-remarks') as HTMLInputElement | null)?.value.trim() || null;
+
+    if (!driverName || !mobileNumber || !vehicleNumber || !amountGiven || !paymentDate || !paymentType) {
+      setFormToast('All required driver payment fields must be filled.');
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      if (!token) { logout(); return; }
+      const response = await fetch('/api/driver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ driverName, mobileNumber, vehicleNumber, amountGiven, paymentDate, paymentType, remarks }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        setFormToast(errorData?.error || 'Unable to save driver payment record.');
+        return;
+      }
+      const record = await response.json();
+      const newRecord: DriverRecord = {
+        id: String(record.id),
+        driverName: record.driverName || driverName,
+        mobileNumber: record.mobileNumber || mobileNumber,
+        vehicleNumber: record.vehicleNumber || vehicleNumber,
+        amountGiven: Number(record.amountGiven || amountGiven),
+        paymentDate: record.paymentDate || paymentDate,
+        paymentType: record.paymentType || paymentType,
+        remarks: record.remarks || remarks,
+        month: record.month || `${new Date(paymentDate).getFullYear()}-${String(new Date(paymentDate).getMonth() + 1).padStart(2, '0')}`,
+      };
+      setDriverRecords((current) => [newRecord, ...current]);
+      setFormToast('Driver payment record saved successfully.');
+      form.reset();
+    } catch (error) {
+      console.error('Error saving driver payment:', error);
+      setFormToast('Unable to save driver payment. Please try again later.');
+    }
+  };
+
+  const handleMechanicExpenseSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormToast(null);
+    const form = event.currentTarget;
+    const mechanicName = (form.querySelector('#form-mechanic-name') as HTMLInputElement | null)?.value.trim() || '';
+    const vehicleNumber = (form.querySelector('#form-mechanic-vehicle') as HTMLInputElement | null)?.value.trim() || '';
+    const amountPaid = Number((form.querySelector('#form-mechanic-amount') as HTMLInputElement | null)?.value || 0);
+    const date = (form.querySelector('#form-mechanic-date') as HTMLInputElement | null)?.value || '';
+    const paidBy = (form.querySelector('#form-mechanic-paidby') as HTMLInputElement | null)?.value.trim() || '';
+    const workDescription = (form.querySelector('#form-mechanic-work') as HTMLInputElement | null)?.value.trim() || '';
+    const partsUsed = (form.querySelector('#form-mechanic-parts') as HTMLInputElement | null)?.value.trim() || null;
+    const remarks = (form.querySelector('#form-mechanic-remarks') as HTMLInputElement | null)?.value.trim() || null;
+
+    if (!mechanicName || !vehicleNumber || !amountPaid || !date || !paidBy || !workDescription) {
+      setFormToast('All required mechanic expense fields must be filled.');
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      if (!token) { logout(); return; }
+      const response = await fetch('/api/mechanic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ mechanicName, vehicleNumber, workDescription, partsUsed, amountPaid, date, paidBy, remarks }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        setFormToast(errorData?.error || 'Unable to save mechanic expense.');
+        return;
+      }
+      const expense = await response.json();
+      const newExpense: MechanicExpense = {
+        id: String(expense.id),
+        mechanicName: expense.mechanicName || mechanicName,
+        vehicleNumber: expense.vehicleNumber || vehicleNumber,
+        workDescription: expense.workDescription || workDescription,
+        partsUsed: expense.partsUsed || partsUsed,
+        amountPaid: Number(expense.amountPaid || amountPaid),
+        date: expense.date || date,
+        paidBy: expense.paidBy || paidBy,
+        remarks: expense.remarks || remarks,
+        month: expense.month || `${new Date(date).getFullYear()}-${String(new Date(date).getMonth() + 1).padStart(2, '0')}`,
+      };
+      setMechanicExpenses((current) => [newExpense, ...current]);
+      setFormToast('Mechanic expense saved successfully.');
+      form.reset();
+    } catch (error) {
+      console.error('Error saving mechanic expense:', error);
+      setFormToast('Unable to save mechanic expense. Please try again later.');
+    }
+  };
+
+  const handleDieselEntrySubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormToast(null);
+    const form = event.currentTarget;
+    const driverName = (form.querySelector('#form-diesel-driver') as HTMLInputElement | null)?.value.trim() || '';
+    const vehicleNumber = (form.querySelector('#form-diesel-vehicle') as HTMLInputElement | null)?.value.trim() || '';
+    const quantity = Number((form.querySelector('#form-diesel-quantity') as HTMLInputElement | null)?.value || 0);
+    const rate = Number((form.querySelector('#form-diesel-rate') as HTMLInputElement | null)?.value || 0);
+    const date = (form.querySelector('#form-diesel-date') as HTMLInputElement | null)?.value || '';
+    const givenBy = (form.querySelector('#form-diesel-givenby') as HTMLInputElement | null)?.value.trim() || '';
+    const remarks = (form.querySelector('#form-diesel-remarks') as HTMLInputElement | null)?.value.trim() || null;
+
+    if (!driverName || !vehicleNumber || !quantity || !rate || !date || !givenBy) {
+      setFormToast('All required diesel log fields must be filled.');
+      return;
+    }
+
+    try {
+      const token = getAuthToken();
+      if (!token) { logout(); return; }
+      const response = await fetch('/api/diesel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ driverName, vehicleNumber, quantity, rate, date, givenBy, remarks }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        setFormToast(errorData?.error || 'Unable to save diesel log.');
+        return;
+      }
+      const entry = await response.json();
+      const newEntry: DieselEntry = {
+        id: String(entry.id),
+        driverName: entry.driverName || driverName,
+        vehicleNumber: entry.vehicleNumber || vehicleNumber,
+        quantity: Number(entry.quantity || quantity),
+        rate: Number(entry.rate || rate),
+        amount: Number(entry.amount || quantity * rate),
+        date: entry.date || date,
+        givenBy: entry.givenBy || givenBy,
+        remarks: entry.remarks || remarks,
+        month: entry.month || `${new Date(date).getFullYear()}-${String(new Date(date).getMonth() + 1).padStart(2, '0')}`,
+      };
+      setDieselEntries((current) => [newEntry, ...current]);
+      setFormToast('Diesel log saved successfully.');
+      form.reset();
+    } catch (error) {
+      console.error('Error saving diesel log:', error);
+      setFormToast('Unable to save diesel log. Please try again later.');
+    }
+  };
+
+  const filteredDriverRecords = useMemo(() => {
+    return driverRecords.filter((item) => {
+      const matchesSearch = driverSearch
+        ? [item.driverName, item.vehicleNumber, item.mobileNumber]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(driverSearch.toLowerCase()))
+        : true;
+      const matchesMonth = driverMonthFilter === 'all'
+        ? true
+        : (() => {
+            const date = new Date(item.paymentDate);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return month === driverMonthFilter;
+          })();
+      return matchesSearch && matchesMonth;
+    });
+  }, [driverRecords, driverSearch, driverMonthFilter]);
+
+  const filteredMechanicExpenses = useMemo(() => {
+    return mechanicExpenses.filter((item) => {
+      const matchesSearch = mechanicSearch
+        ? [item.mechanicName, item.vehicleNumber, item.workDescription]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(mechanicSearch.toLowerCase()))
+        : true;
+      const matchesMonth = mechanicMonthFilter === 'all'
+        ? true
+        : (() => {
+            const date = new Date(item.date);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return month === mechanicMonthFilter;
+          })();
+      return matchesSearch && matchesMonth;
+    });
+  }, [mechanicExpenses, mechanicSearch, mechanicMonthFilter]);
+
+  const filteredDieselEntries = useMemo(() => {
+    return dieselEntries.filter((item) => {
+      const matchesSearch = dieselSearch
+        ? [item.driverName, item.vehicleNumber, item.givenBy]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(dieselSearch.toLowerCase()))
+        : true;
+      const matchesMonth = dieselMonthFilter === 'all'
+        ? true
+        : (() => {
+            const date = new Date(item.date);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return month === dieselMonthFilter;
+          })();
+      return matchesSearch && matchesMonth;
+    });
+  }, [dieselEntries, dieselSearch, dieselMonthFilter]);
+
+  const compileDriverLedger = () => {
+    const filtered = driverRecords.filter((item) => {
+      const date = new Date(item.paymentDate);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear());
+      return month === driverReportMonth && year === driverReportYear;
+    });
+    setDriverReportResults(filtered);
+    setDriverReportSummary({
+      totalAmount: filtered.reduce((sum, item) => sum + item.amountGiven, 0),
+      uniqueDrivers: new Set(filtered.map((item) => item.driverName)).size,
+      totalTransactions: filtered.length,
+    });
+    setDriverReportCompiled(true);
+  };
+
+  const exportDriverCsv = () => {
+    if (!driverReportCompiled) {
+      setFormToast('Compile the driver ledger before exporting.');
+      return;
+    }
+    const header = ['Driver Name', 'Mobile Number', 'Vehicle Number', 'Amount Given', 'Payment Date', 'Payment Type', 'Remarks'];
+    const rows = driverReportResults.map((item) => [
+      item.driverName,
+      item.mobileNumber,
+      item.vehicleNumber,
+      String(item.amountGiven),
+      formatDate(item.paymentDate),
+      item.paymentType,
+      item.remarks || '',
+    ]);
+    const csvContent = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `driver-ledger-${driverReportMonth}-${driverReportYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const compileMechanicLedger = () => {
+    const filtered = mechanicExpenses.filter((item) => {
+      const date = new Date(item.date);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear());
+      return month === mechanicReportMonth && year === mechanicReportYear;
+    });
+    setMechanicReportResults(filtered);
+    setMechanicReportSummary({
+      totalAmount: filtered.reduce((sum, item) => sum + item.amountPaid, 0),
+      totalTasks: filtered.length,
+    });
+    setMechanicReportCompiled(true);
+  };
+
+  const exportMechanicCsv = () => {
+    if (!mechanicReportCompiled) {
+      setFormToast('Compile the mechanic ledger before exporting.');
+      return;
+    }
+    const header = ['Mechanic Name', 'Vehicle Number', 'Work Description', 'Parts Used', 'Amount Paid', 'Date', 'Paid By', 'Remarks'];
+    const rows = mechanicReportResults.map((item) => [
+      item.mechanicName,
+      item.vehicleNumber,
+      item.workDescription,
+      item.partsUsed || '',
+      String(item.amountPaid),
+      formatDate(item.date),
+      item.paidBy,
+      item.remarks || '',
+    ]);
+    const csvContent = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `mechanic-ledger-${mechanicReportMonth}-${mechanicReportYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const compileDieselLedger = () => {
+    const filtered = dieselEntries.filter((item) => {
+      const date = new Date(item.date);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear());
+      return month === dieselReportMonth && year === dieselReportYear;
+    });
+    setDieselReportResults(filtered);
+    const totalLiters = filtered.reduce((sum, item) => sum + item.quantity, 0);
+    const totalAmount = filtered.reduce((sum, item) => sum + item.amount, 0);
+    setDieselReportSummary({
+      totalLiters,
+      totalAmount,
+      averageRate: filtered.length ? totalAmount / filtered.reduce((sum, item) => sum + item.quantity, 0) : 0,
+    });
+    setDieselReportCompiled(true);
+  };
+
+  const exportDieselCsv = () => {
+    if (!dieselReportCompiled) {
+      setFormToast('Compile the diesel ledger before exporting.');
+      return;
+    }
+    const header = ['Driver Name', 'Vehicle Number', 'Quantity (L)', 'Rate / L', 'Total Amount', 'Date', 'Given By', 'Remarks'];
+    const rows = dieselReportResults.map((item) => [
+      item.driverName,
+      item.vehicleNumber,
+      String(item.quantity),
+      String(item.rate),
+      String(item.amount),
+      formatDate(item.date),
+      item.givenBy,
+      item.remarks || '',
+    ]);
+    const csvContent = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `diesel-ledger-${dieselReportMonth}-${dieselReportYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  useEffect(() => {
+    if (reportCompiled) {
+      compileLedger();
+    }
+  }, [challans, reportCompiled]);
+
+  useEffect(() => {
+    if (driverReportCompiled) {
+      compileDriverLedger();
+    }
+  }, [driverRecords, driverReportCompiled]);
+
+  useEffect(() => {
+    if (mechanicReportCompiled) {
+      compileMechanicLedger();
+    }
+  }, [mechanicExpenses, mechanicReportCompiled]);
+
+  useEffect(() => {
+    if (dieselReportCompiled) {
+      compileDieselLedger();
+    }
+  }, [dieselEntries, dieselReportCompiled]);
+
   useEffect(() => {
     setDefaultChallanDate();
     if (typeof window !== 'undefined') {
       const today = new Date();
       setReportMonth(String(today.getMonth() + 1).padStart(2, '0'));
       setReportYear(String(today.getFullYear()));
+      setDriverReportMonth(String(today.getMonth() + 1).padStart(2, '0'));
+      setDriverReportYear(String(today.getFullYear()));
+      setMechanicReportMonth(String(today.getMonth() + 1).padStart(2, '0'));
+      setMechanicReportYear(String(today.getFullYear()));
+      setDieselReportMonth(String(today.getMonth() + 1).padStart(2, '0'));
+      setDieselReportYear(String(today.getFullYear()));
     }
     loadVehicleOptions();
     loadVehicleProfiles();
     loadDriverProfiles();
     loadChallans();
+    loadDriverRecords();
+    loadMechanicExpenses();
+    loadDieselEntries();
   }, []);
-
-  useEffect(() => {
-    if (reportCompiled) {
-      compileLedger();
-    }
-  }, [challans]);
 
   const closeQrScanner = () => {
     if (animationFrameRef.current) {
@@ -991,7 +1732,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="card-icon green-bg"><i className="fa-solid fa-indian-rupee-sign" /></div>
                   </div>
-                  <div className="card-footer-desc">This Month (₹10/Bag)</div>
+                  <div className="card-footer-desc">This Month (₹8.25/Bag)</div>
                 </div>
               </div>
 
@@ -1087,9 +1828,9 @@ export default function DashboardPage() {
                             <td className="text-right font-bold text-white">₹ {c.calculatedAmount.toLocaleString('en-IN')}</td>
                             <td className="text-center">
                               <div className="actions-cell">
-                                <button type="button" className="btn-icon view-btn" title="View Bill"><i className="fa-solid fa-eye"></i></button>
-                                <button type="button" className="btn-icon edit-btn" title="Edit Log"><i className="fa-solid fa-pen-to-square"></i></button>
-                                <button type="button" className="btn-icon delete-btn" title="Delete Log"><i className="fa-solid fa-trash-can"></i></button>
+                                <button type="button" className="btn-icon view-btn" title="View Bill" onClick={() => handleViewChallan(c.id)}><i className="fa-solid fa-eye"></i></button>
+                                <button type="button" className="btn-icon edit-btn" title="Edit Log" onClick={() => handleEditChallan(c.id)}><i className="fa-solid fa-pen-to-square"></i></button>
+                                <button type="button" className="btn-icon delete-btn" title="Delete Log" onClick={() => handleDeleteChallan(c.id)}><i className="fa-solid fa-trash-can"></i></button>
                               </div>
                             </td>
                           </tr>
@@ -1245,7 +1986,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="r-actions">
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={exportLedgerCsv}>
                       <i className="fa-solid fa-file-csv" /> Export CSV
                     </button>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
@@ -1712,11 +2453,33 @@ export default function DashboardPage() {
                     <div className="filter-row">
                       <div className="search-box">
                         <i className="fa-solid fa-magnifying-glass" />
-                        <input type="text" id="driver-search" placeholder="Search Driver / Vehicle..." />
+                        <input
+                          type="text"
+                          id="driver-search"
+                          value={driverSearch}
+                          onChange={(e) => setDriverSearch(e.target.value)}
+                          placeholder="Search Driver / Vehicle..."
+                        />
                       </div>
                       <div className="month-filter">
-                        <select id="driver-month-filter" defaultValue="all">
+                        <select
+                          id="driver-month-filter"
+                          value={driverMonthFilter}
+                          onChange={(e) => setDriverMonthFilter(e.target.value)}
+                        >
                           <option value="all">All Months</option>
+                          <option value="01">January</option>
+                          <option value="02">February</option>
+                          <option value="03">March</option>
+                          <option value="04">April</option>
+                          <option value="05">May</option>
+                          <option value="06">June</option>
+                          <option value="07">July</option>
+                          <option value="08">August</option>
+                          <option value="09">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
                         </select>
                       </div>
                     </div>
@@ -1740,7 +2503,24 @@ export default function DashboardPage() {
                           <th className="text-center">Actions</th>
                         </tr>
                       </thead>
-                      <tbody id="driver-table-rows"></tbody>
+                      <tbody id="driver-table-rows">
+                        {filteredDriverRecords.map((item) => (
+                          <tr key={item.id}>
+                            <td>{item.driverName}</td>
+                            <td>{item.mobileNumber}</td>
+                            <td>{item.vehicleNumber}</td>
+                            <td className="text-right">₹ {item.amountGiven.toLocaleString('en-IN')}</td>
+                            <td>{formatDate(item.paymentDate)}</td>
+                            <td>{item.paymentType}</td>
+                            <td>{item.remarks || '-'}</td>
+                            <td className="text-center">
+                              <div className="actions-cell">
+                                <button type="button" className="btn-icon view-btn" title="View"><i className="fa-solid fa-eye" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   </div>
 
@@ -1756,7 +2536,7 @@ export default function DashboardPage() {
                     <p className="form-panel-subtitle">Record payment or advance given to carrier driver. Date defaults to today.</p>
                     <div className="form-feedback-toast hidden" id="driver-form-toast"></div>
 
-                    <form id="driver-entry-form" onSubmit={(e) => e.preventDefault()}>
+                    <form id="driver-entry-form" onSubmit={handleDriverRecordSubmit}>
                       <input type="hidden" id="form-driver-id" value="" />
                       <div className="input-group">
                         <label htmlFor="form-driver-name">Driver Name</label>
@@ -1824,7 +2604,7 @@ export default function DashboardPage() {
                         <button type="submit" className="btn btn-primary" id="btn-driver-form-submit">
                           <i className="fa-solid fa-circle-check" /> Save Record
                         </button>
-                        <button type="button" className="btn btn-secondary" id="btn-driver-form-cancel" onClick={() => {}}>
+                        <button type="button" className="btn btn-secondary" id="btn-driver-form-cancel" onClick={resetDriverForm}>
                           Cancel
                         </button>
                       </div>
@@ -1865,13 +2645,13 @@ export default function DashboardPage() {
                         <option value="2027">2027</option>
                       </select>
                     </div>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={compileDriverLedger}>
                       <i className="fa-solid fa-arrows-rotate" /> Compile Ledger
                     </button>
                   </div>
 
                   <div className="r-actions">
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={exportDriverCsv}>
                       <i className="fa-solid fa-file-csv" /> Export to CSV
                     </button>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
@@ -1880,42 +2660,54 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="report-results-grid hidden" id="driver-report-results-container">
-                  <div className="report-summary-stats">
-                    <div className="r-stat">
-                      <span className="r-label">Compiled Month</span>
-                      <span className="r-val" id="driver-rep-display-month">June 2026</span>
+                {driverReportCompiled ? (
+                  <div className="report-results-grid" id="driver-report-results-container">
+                    <div className="report-summary-stats">
+                      <div className="r-stat">
+                        <span className="r-label">Compiled Month</span>
+                        <span className="r-val" id="driver-rep-display-month">June 2026</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Total Amount Paid</span>
+                        <span className="r-val green-text" id="driver-rep-total-amount">₹ 0</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Unique Drivers Paid</span>
+                        <span className="r-val" id="driver-rep-unique-drivers">0</span>
+                      </div>
                     </div>
-                    <div className="r-stat">
-                      <span className="r-label">Total Amount Paid</span>
-                      <span className="r-val green-text" id="driver-rep-total-amount">₹ 0</span>
-                    </div>
-                    <div className="r-stat">
-                      <span className="r-label">Unique Drivers Paid</span>
-                      <span className="r-val" id="driver-rep-unique-drivers">0</span>
+
+                    <div className="table-responsive">
+                      <table className="dash-table min-table">
+                        <thead>
+                          <tr>
+                            <th>Driver Name</th>
+                            <th>Mobile Number</th>
+                            <th>Vehicle Number</th>
+                            <th className="text-right">Total Advance Given</th>
+                            <th className="text-right">Transaction Count</th>
+                          </tr>
+                        </thead>
+                        <tbody id="driver-report-table-rows">
+                          {driverReportResults.map((item) => (
+                            <tr key={item.id}>
+                              <td>{item.driverName}</td>
+                              <td>{item.mobileNumber}</td>
+                              <td>{item.vehicleNumber}</td>
+                              <td className="text-right">₹ {item.amountGiven.toLocaleString('en-IN')}</td>
+                              <td className="text-right">1</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-
-                  <div className="table-responsive">
-                    <table className="dash-table min-table">
-                      <thead>
-                        <tr>
-                          <th>Driver Name</th>
-                          <th>Mobile Number</th>
-                          <th>Vehicle Number</th>
-                          <th className="text-right">Total Advance Given</th>
-                          <th className="text-right">Transaction Count</th>
-                        </tr>
-                      </thead>
-                      <tbody id="driver-report-table-rows"></tbody>
-                    </table>
+                ) : (
+                  <div className="report-empty-state" id="driver-report-empty-container">
+                    <i className="fa-solid fa-calculator" />
+                    <p>Select Month and Year above and click "Compile Ledger" to review driver payments.</p>
                   </div>
-                </div>
-
-                <div className="report-empty-state" id="driver-report-empty-container">
-                  <i className="fa-solid fa-calculator" />
-                  <p>Select Month and Year above and click "Compile Ledger" to review driver payments.</p>
-                </div>
+                )}
               </div>
             </section>
             <section className={activeTab === 'mechanic' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
@@ -1949,11 +2741,33 @@ export default function DashboardPage() {
                     <div className="filter-row">
                       <div className="search-box">
                         <i className="fa-solid fa-magnifying-glass" />
-                        <input type="text" id="mechanic-search" placeholder="Search Mechanic / Vehicle..." />
+                        <input
+                          type="text"
+                          id="mechanic-search"
+                          value={mechanicSearch}
+                          onChange={(e) => setMechanicSearch(e.target.value)}
+                          placeholder="Search Mechanic / Vehicle..."
+                        />
                       </div>
                       <div className="month-filter">
-                        <select id="mechanic-month-filter" defaultValue="all">
+                        <select
+                          id="mechanic-month-filter"
+                          value={mechanicMonthFilter}
+                          onChange={(e) => setMechanicMonthFilter(e.target.value)}
+                        >
                           <option value="all">All Months</option>
+                          <option value="01">January</option>
+                          <option value="02">February</option>
+                          <option value="03">March</option>
+                          <option value="04">April</option>
+                          <option value="05">May</option>
+                          <option value="06">June</option>
+                          <option value="07">July</option>
+                          <option value="08">August</option>
+                          <option value="09">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
                         </select>
                       </div>
                     </div>
@@ -1978,7 +2792,25 @@ export default function DashboardPage() {
                           <th className="text-center">Actions</th>
                         </tr>
                       </thead>
-                      <tbody id="mechanic-table-rows"></tbody>
+                      <tbody id="mechanic-table-rows">
+                        {filteredMechanicExpenses.map((item) => (
+                          <tr key={item.id}>
+                            <td>{item.mechanicName}</td>
+                            <td>{item.vehicleNumber}</td>
+                            <td>{item.workDescription}</td>
+                            <td>{item.partsUsed || '-'}</td>
+                            <td className="text-right">₹ {item.amountPaid.toLocaleString('en-IN')}</td>
+                            <td>{formatDate(item.date)}</td>
+                            <td>{item.paidBy}</td>
+                            <td>{item.remarks || '-'}</td>
+                            <td className="text-center">
+                              <div className="actions-cell">
+                                <button type="button" className="btn-icon view-btn" title="View"><i className="fa-solid fa-eye" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   </div>
 
@@ -1994,7 +2826,7 @@ export default function DashboardPage() {
                     <p className="form-panel-subtitle">Create maintenance log for vehicles. Date defaults to today.</p>
                     <div className="form-feedback-toast hidden" id="mechanic-form-toast"></div>
 
-                    <form id="mechanic-entry-form" onSubmit={(e) => e.preventDefault()}>
+                    <form id="mechanic-entry-form" onSubmit={handleMechanicExpenseSubmit}>
                       <input type="hidden" id="form-mechanic-id" value="" />
                       <div className="input-group">
                         <label htmlFor="form-mechanic-name">Mechanic Name</label>
@@ -2066,7 +2898,7 @@ export default function DashboardPage() {
                         <button type="submit" className="btn btn-primary" id="btn-mechanic-form-submit">
                           <i className="fa-solid fa-circle-check" /> Save Record
                         </button>
-                        <button type="button" className="btn btn-secondary" id="btn-mechanic-form-cancel" onClick={() => {}}>
+                        <button type="button" className="btn btn-secondary" id="btn-mechanic-form-cancel" onClick={resetMechanicForm}>
                           Cancel
                         </button>
                       </div>
@@ -2107,13 +2939,13 @@ export default function DashboardPage() {
                         <option value="2027">2027</option>
                       </select>
                     </div>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={compileMechanicLedger}>
                       <i className="fa-solid fa-arrows-rotate" /> Compile Ledger
                     </button>
                   </div>
 
                   <div className="r-actions">
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={exportMechanicCsv}>
                       <i className="fa-solid fa-file-csv" /> Export to CSV
                     </button>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
@@ -2122,44 +2954,58 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="report-results-grid hidden" id="mechanic-report-results-container">
-                  <div className="report-summary-stats">
-                    <div className="r-stat">
-                      <span className="r-label">Compiled Month</span>
-                      <span className="r-val" id="mechanic-rep-display-month">June 2026</span>
+                {mechanicReportCompiled ? (
+                  <div className="report-results-grid" id="mechanic-report-results-container">
+                    <div className="report-summary-stats">
+                      <div className="r-stat">
+                        <span className="r-label">Compiled Month</span>
+                        <span className="r-val" id="mechanic-rep-display-month">June 2026</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Total Expense</span>
+                        <span className="r-val green-text" id="mechanic-rep-total-amount">₹ 0</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Services Logged</span>
+                        <span className="r-val" id="mechanic-rep-total-tasks">0</span>
+                      </div>
                     </div>
-                    <div className="r-stat">
-                      <span className="r-label">Total Expense</span>
-                      <span className="r-val green-text" id="mechanic-rep-total-amount">₹ 0</span>
-                    </div>
-                    <div className="r-stat">
-                      <span className="r-label">Services Logged</span>
-                      <span className="r-val" id="mechanic-rep-total-tasks">0</span>
+
+                    <div className="table-responsive">
+                      <table className="dash-table min-table">
+                        <thead>
+                          <tr>
+                            <th>Mechanic Name</th>
+                            <th>Vehicle Number</th>
+                            <th>Work Description</th>
+                            <th>Parts Used</th>
+                            <th className="text-right">Amount Paid</th>
+                            <th>Date</th>
+                            <th>Paid By</th>
+                          </tr>
+                        </thead>
+                        <tbody id="mechanic-report-table-rows">
+                          {mechanicReportResults.map((item) => (
+                            <tr key={item.id}>
+                              <td>{item.mechanicName}</td>
+                              <td>{item.vehicleNumber}</td>
+                              <td>{item.workDescription}</td>
+                              <td>{item.partsUsed || '-'}</td>
+                              <td className="text-right">₹ {item.amountPaid.toLocaleString('en-IN')}</td>
+                              <td>{formatDate(item.date)}</td>
+                              <td>{item.paidBy}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-
-                  <div className="table-responsive">
-                    <table className="dash-table min-table">
-                      <thead>
-                        <tr>
-                          <th>Mechanic Name</th>
-                          <th>Vehicle Number</th>
-                          <th>Work Description</th>
-                          <th>Parts Used</th>
-                          <th className="text-right">Amount Paid</th>
-                          <th>Date</th>
-                          <th>Paid By</th>
-                        </tr>
-                      </thead>
-                      <tbody id="mechanic-report-table-rows"></tbody>
-                    </table>
+                ) : (
+                  <div className="report-empty-state" id="mechanic-report-empty-container">
+                    <i className="fa-solid fa-calculator" />
+                    <p>Select Month and Year above and click "Compile Ledger" to review workshop expenses.</p>
                   </div>
-                </div>
-
-                <div className="report-empty-state" id="mechanic-report-empty-container">
-                  <i className="fa-solid fa-calculator" />
-                  <p>Select Month and Year above and click "Compile Ledger" to review workshop expenses.</p>
-                </div>
+                )}
               </div>
             </section>
             <section className={activeTab === 'diesel' ? 'dash-tab-pane active' : 'dash-tab-pane'}>
@@ -2193,11 +3039,33 @@ export default function DashboardPage() {
                     <div className="filter-row">
                       <div className="search-box">
                         <i className="fa-solid fa-magnifying-glass" />
-                        <input type="text" id="diesel-search" placeholder="Search Driver / Vehicle..." onInput={() => {}} />
+                        <input
+                          type="text"
+                          id="diesel-search"
+                          value={dieselSearch}
+                          onChange={(e) => setDieselSearch(e.target.value)}
+                          placeholder="Search Driver / Vehicle..."
+                        />
                       </div>
                       <div className="month-filter">
-                        <select id="diesel-month-filter" onChange={() => {}} defaultValue="all">
+                        <select
+                          id="diesel-month-filter"
+                          value={dieselMonthFilter}
+                          onChange={(e) => setDieselMonthFilter(e.target.value)}
+                        >
                           <option value="all">All Months</option>
+                          <option value="01">January</option>
+                          <option value="02">February</option>
+                          <option value="03">March</option>
+                          <option value="04">April</option>
+                          <option value="05">May</option>
+                          <option value="06">June</option>
+                          <option value="07">July</option>
+                          <option value="08">August</option>
+                          <option value="09">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
                         </select>
                       </div>
                     </div>
@@ -2222,7 +3090,25 @@ export default function DashboardPage() {
                           <th className="text-center">Actions</th>
                         </tr>
                       </thead>
-                      <tbody id="diesel-table-rows"></tbody>
+                      <tbody id="diesel-table-rows">
+                        {filteredDieselEntries.map((item) => (
+                          <tr key={item.id}>
+                            <td>{item.driverName}</td>
+                            <td>{item.vehicleNumber}</td>
+                            <td className="text-right">{item.quantity.toLocaleString()}</td>
+                            <td className="text-right">₹ {item.rate.toLocaleString('en-IN')}</td>
+                            <td className="text-right">₹ {item.amount.toLocaleString('en-IN')}</td>
+                            <td>{formatDate(item.date)}</td>
+                            <td>{item.givenBy}</td>
+                            <td>{item.remarks || '-'}</td>
+                            <td className="text-center">
+                              <div className="actions-cell">
+                                <button type="button" className="btn-icon view-btn" title="View"><i className="fa-solid fa-eye" /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   </div>
 
@@ -2238,7 +3124,7 @@ export default function DashboardPage() {
                     <p className="form-panel-subtitle">Record fuel billing. Total diesel amount is calculated automatically.</p>
                     <div className="form-feedback-toast hidden" id="diesel-form-toast" />
 
-                    <form id="diesel-entry-form" onSubmit={(e) => e.preventDefault()}>
+                    <form id="diesel-entry-form" onSubmit={handleDieselEntrySubmit}>
                       <input type="hidden" id="form-diesel-id" value="" />
                       <div className="input-group">
                         <label htmlFor="form-diesel-driver">Driver Name</label>
@@ -2261,14 +3147,14 @@ export default function DashboardPage() {
                           <label htmlFor="form-diesel-quantity">Diesel Quantity (Liters)</label>
                           <div className="input-with-icon">
                             <i className="fa-solid fa-droplet" />
-                            <input type="number" id="form-diesel-quantity" required placeholder="e.g. 150" min="1" step="0.01" onInput={() => {}} />
+                            <input type="number" id="form-diesel-quantity" required placeholder="e.g. 150" min="1" step="0.01" onInput={updateDieselAmount} />
                           </div>
                         </div>
                         <div className="input-group">
                           <label htmlFor="form-diesel-rate">Diesel Rate (per Liter)</label>
                           <div className="input-with-icon">
                             <i className="fa-solid fa-tag" />
-                            <input type="number" id="form-diesel-rate" required placeholder="e.g. 90" min="1" step="0.01" onInput={() => {}} />
+                            <input type="number" id="form-diesel-rate" required placeholder="e.g. 90" min="1" step="0.01" onInput={updateDieselAmount} />
                           </div>
                         </div>
                       </div>
@@ -2309,7 +3195,7 @@ export default function DashboardPage() {
                         <button type="submit" className="btn btn-primary" id="btn-diesel-form-submit">
                           <i className="fa-solid fa-circle-check" /> Save Record
                         </button>
-                        <button type="button" className="btn btn-secondary" id="btn-diesel-form-cancel" onClick={() => {}}>
+                        <button type="button" className="btn btn-secondary" id="btn-diesel-form-cancel" onClick={resetDieselForm}>
                           Cancel
                         </button>
                       </div>
@@ -2350,13 +3236,13 @@ export default function DashboardPage() {
                         <option value="2027">2027</option>
                       </select>
                     </div>
-                    <button type="button" className="btn btn-primary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={compileDieselLedger}>
                       <i className="fa-solid fa-arrows-rotate" /> Compile Ledger
                     </button>
                   </div>
 
                   <div className="r-actions">
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => {}}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={exportDieselCsv}>
                       <i className="fa-solid fa-file-csv" /> Export to CSV
                     </button>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
@@ -2365,41 +3251,52 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="report-results-grid hidden" id="diesel-report-results-container">
-                  <div className="report-summary-stats">
-                    <div className="r-stat">
-                      <span className="r-label">Compiled Month</span>
-                      <span className="r-val" id="diesel-rep-display-month">June 2026</span>
+                {dieselReportCompiled ? (
+                  <div className="report-results-grid" id="diesel-report-results-container">
+                    <div className="report-summary-stats">
+                      <div className="r-stat">
+                        <span className="r-label">Compiled Month</span>
+                        <span className="r-val" id="diesel-rep-display-month">June 2026</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Total Liters Filled</span>
+                        <span className="r-val text-white" id="diesel-rep-total-liters">0 L</span>
+                      </div>
+                      <div className="r-stat">
+                        <span className="r-label">Grand Total Cost</span>
+                        <span className="r-val green-text" id="diesel-rep-total-amount">₹ 0</span>
+                      </div>
                     </div>
-                    <div className="r-stat">
-                      <span className="r-label">Total Liters Filled</span>
-                      <span className="r-val text-white" id="diesel-rep-total-liters">0 L</span>
-                    </div>
-                    <div className="r-stat">
-                      <span className="r-label">Grand Total Cost</span>
-                      <span className="r-val green-text" id="diesel-rep-total-amount">₹ 0</span>
+
+                    <div className="table-responsive">
+                      <table className="dash-table min-table">
+                        <thead>
+                          <tr>
+                            <th>Driver Name</th>
+                            <th className="text-right">Total Liters</th>
+                            <th className="text-right">Average Rate</th>
+                            <th className="text-right">Total Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody id="diesel-report-table-rows">
+                          {dieselReportResults.map((item) => (
+                            <tr key={item.id}>
+                              <td>{item.driverName}</td>
+                              <td className="text-right">{item.quantity.toLocaleString('en-IN')}</td>
+                              <td className="text-right">₹ {item.rate.toLocaleString('en-IN')}</td>
+                              <td className="text-right">₹ {item.amount.toLocaleString('en-IN')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-
-                  <div className="table-responsive">
-                    <table className="dash-table min-table">
-                      <thead>
-                        <tr>
-                          <th>Driver Name</th>
-                          <th className="text-right">Total Liters</th>
-                          <th className="text-right">Average Rate</th>
-                          <th className="text-right">Total Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody id="diesel-report-table-rows"></tbody>
-                    </table>
+                ) : (
+                  <div className="report-empty-state" id="diesel-report-empty-container">
+                    <i className="fa-solid fa-calculator" />
+                    <p>Select Month and Year above and click "Compile Ledger" to review diesel reports.</p>
                   </div>
-                </div>
-
-                <div className="report-empty-state" id="diesel-report-empty-container">
-                  <i className="fa-solid fa-calculator" />
-                  <p>Select Month and Year above and click "Compile Ledger" to review diesel reports.</p>
-                </div>
+                )}
               </div>
             </section>
           </main>

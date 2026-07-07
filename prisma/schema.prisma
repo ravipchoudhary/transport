@@ -13,8 +13,8 @@ model User {
   mobile      String    @unique
   email       String    @unique
   password    String
-  role        String
-  challans    Challan[]
+  role           String
+  challans       Challan[]
   diesel      Diesel[]
   mechanic    Mechanic[]
   driver      Driver[]
@@ -28,9 +28,9 @@ model Challan {
   challanNo       String
   dealerName      String
   date            DateTime
-  riceBags        Int
-  wheatBags       Int
-  totalBags       Int
+  riceBags        Int      @default(0)
+  wheatBags       Int      @default(0)
+  totalBags       Int      @default(0)
   ratePerBag      Float
   calculatedAmount Float
   month           String

@@ -44,6 +44,8 @@ export default function LoginPage() {
         throw new Error(data.message || 'Login failed. Please check your credentials.');
       }
 
+      // OTP flow removed: proceed directly if login successful
+
       if (data.token) {
         localStorage.setItem('authToken', data.token);
       }

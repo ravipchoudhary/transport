@@ -34,6 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: result.message || 'Invalid email/mobile or password.' });
     }
 
+    // Previously required OTP verification; OTP system removed.
+
     const token = jwt.sign(
       { id: result.user.id, email: result.user.email, role: result.user.role },
       SECRET,
